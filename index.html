@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indus Cowork Demo</title>
+<style>
+/* Tokens: see design/tokens.css (inlined so this file stays self-contained) */
+:root {
+  --font-display: "Season Mix", "Inter Display", "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-sans:    "Matter", "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono:    "Matter Mono", ui-monospace, "SF Mono", Menlo, "DejaVu Sans Mono", monospace;
+  --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600;
+
+  --text-display-size: 32px;  --text-display-lh: 38.4px;  --text-display-track: 0.4063px;
+  --text-title-size:   20px;  --text-title-lh:   24px;    --text-title-track:  -0.4492px;
+  --text-body-size:    16px;  --text-body-lh:    24px;    --text-body-track:   -0.3125px;
+  --text-heading-size: 16px;  --text-heading-lh: 19.2px;  --text-heading-track:-0.3125px;
+  --text-ui-size:      15px;  --text-ui-lh:      21.75px; --text-ui-track:     -0.2344px;
+  --text-small-size:   14px;  --text-small-lh:   21px;    --text-small-track:  -0.1504px;
+  --text-caption-size: 12px;  --text-caption-lh: 18px;    --text-caption-track: 0;
+
+  --color-ink: #141414; --color-ink-secondary: #525252; --color-ink-muted: #6b7280;
+  --color-ink-placeholder: #999999; --color-ink-faint: #b3b3b3; --color-ink-done: #bebebe;
+  --color-surface: #ffffff; --color-surface-sunken: #f5f5f5; --color-surface-hover: #f0f0f0; --color-canvas: #f7f5f3;
+  --color-border: #e6e6e6; --color-border-subtle: #f0f0f0; --color-border-strong: #cccccc;
+  --color-success-bg: #e3f1d8; --color-success-fg: #385418; --color-success-icon: #80ae4d;
+  --color-info-bg: #e8effc; --color-danger-bg: #fee2e2; --color-warning-bg: #fffbeb; --color-slate: #374151;
+
+  --space-0-5: 2px; --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-7: 28px; --space-12: 48px;
+
+  --radius-xs: 4px; --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+  --radius-xl: 20px; --radius-2xl: 24px; --radius-pill: 9999px;
+
+  --size-icon: 16px; --size-icon-btn: 36px; --size-icon-btn-sm: 28px;
+  --size-panel-header: 64px; --size-content-max: 720px;
+
+  --shadow-composer: 0 12px 12px #f0f0f0;
+
+  /* demo-only layout constants */
+  --stage-w: 1000px;
+  --stage-h: 625px;
+  --col-w: 640px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--color-surface);
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* Stage: fixed design size, scaled to fit its container and centred */
+.viewport { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.stage {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  transform-origin: center center;
+  transform: translate(-50%, -50%);
+}
+
+/* App chrome: grey frame with an inset white panel, as in the Figma frames */
+.chrome {
+  width: 100%; height: 100%;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2);
+}
+.panel {
+  position: relative;
+  width: 100%; height: 100%;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* Header */
+.header {
+  flex: none;
+  height: var(--size-panel-header);
+  padding: 0 var(--space-7);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+.header-title {
+  font-size: var(--text-heading-size); line-height: var(--text-heading-lh);
+  letter-spacing: var(--text-heading-track);
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.header-title .brand-dot {
+  width: 20px; height: 20px; border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken); border: 1px solid var(--color-border);
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: var(--weight-semibold); color: var(--color-ink-secondary);
+}
+.chapters { display: flex; gap: var(--space-0-5); }
+.chapter {
+  height: var(--size-icon-btn-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  display: flex; align-items: center;
+  font-size: var(--text-small-size); line-height: var(--text-small-lh);
+  letter-spacing: var(--text-small-track);
+  color: var(--color-ink-placeholder);
+  transition: background-color .3s, color .3s;
+}
+.chapter.is-active { background: var(--color-surface-hover); color: var(--color-ink); }
+.header-actions { justify-self: end; display: flex; }
+.icon-btn {
+  width: var(--size-icon-btn); height: var(--size-icon-btn);
+  border-radius: var(--radius-pill);
+  display: grid; place-items: center;
+  flex: none;
+}
+.icon-btn svg { width: var(--size-icon); height: var(--size-icon); display: block; }
+
+/* Thread */
+.thread-wrap { flex: 1 1 auto; min-height: 0; display: flex; justify-content: center; }
+.thread {
+  width: var(--col-w);
+  padding-top: var(--space-2);
+  display: flex; flex-direction: column;
+  gap: var(--space-4);
+}
+.scene { display: none; flex-direction: column; gap: var(--space-4); }
+.scene.is-live { display: flex; }
+
+.bubble-row { display: flex; justify-content: flex-end; }
+.bubble {
+  max-width: 80%;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-body-size); line-height: var(--text-body-lh);
+  letter-spacing: var(--text-body-track);
+}
+
+.status {
+  display: flex; align-items: center; gap: var(--space-2);
+  height: 24px;
+  font-size: var(--text-ui-size); line-height: var(--text-ui-lh);
+  letter-spacing: var(--text-ui-track);
+  color: var(--color-ink-muted);
+}
+.status svg { width: var(--size-icon); height: var(--size-icon); flex: none; }
+.status .shimmer {
+  background: linear-gradient(90deg, var(--color-ink-muted) 0%, var(--color-ink-muted) 35%, var(--color-ink-faint) 50%, var(--color-ink-muted) 65%, var(--color-ink-muted) 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+.status-swap { position: relative; height: 24px; }
+.status-swap > .status { position: absolute; inset: 0 auto auto 0; }
+
+/* Sources */
+.sources { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.source {
+  display: flex; align-items: center; gap: var(--space-2);
+  height: 36px;
+  padding: 0 var(--space-3) 0 var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-small-size); line-height: var(--text-small-lh);
+  letter-spacing: var(--text-small-track);
+}
+.source .cite { width: 26px; height: 26px; }
+.source .meta { color: var(--color-ink-placeholder); }
+
+.cite {
+  display: inline-grid; place-items: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-secondary);
+  font-size: var(--text-caption-size); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Answer prose (assistant messages sit on the panel, no card, as in Figma) */
+.answer { display: flex; flex-direction: column; gap: var(--space-3); }
+.answer p, .answer li {
+  font-size: var(--text-body-size); line-height: var(--text-body-lh);
+  letter-spacing: var(--text-body-track);
+}
+.answer strong { font-weight: var(--weight-semibold); }
+.answer ol { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.answer li { display: grid; grid-template-columns: 22px 1fr; }
+.answer li .n { color: var(--color-ink-placeholder); font-variant-numeric: tabular-nums; }
+.answer .cite { margin-left: var(--space-1); vertical-align: 2px; }
+
+/* Composer */
+.composer-wrap { flex: none; display: flex; flex-direction: column; align-items: center; padding: 0 var(--space-7); }
+.composer {
+  width: var(--col-w);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-composer);
+  padding: var(--space-2);
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.composer-input {
+  min-height: 28px;
+  padding: var(--space-1) var(--space-2) 0;
+  font-size: var(--text-body-size); line-height: var(--text-body-lh);
+  letter-spacing: var(--text-body-track);
+  white-space: nowrap; overflow: hidden;
+}
+.composer-input .placeholder { color: var(--color-ink-placeholder); }
+.caret {
+  display: inline-block; width: 1.5px; height: 18px;
+  background: var(--color-ink); vertical-align: -3px; margin-left: 1px;
+}
+.composer-actions { display: flex; align-items: center; gap: var(--space-2); }
+.composer-actions .spacer { flex: 1; }
+.send { background: var(--color-ink); }
+.disclaimer {
+  height: 32px; display: grid; place-items: center;
+  font-size: var(--text-caption-size); line-height: var(--text-caption-lh);
+  color: var(--color-ink-faint);
+}
+
+/* Empty state (Figma "Prompt" frame): display heading above a centred composer */
+.empty-state {
+  position: absolute; left: 0; right: 0;
+  display: flex; justify-content: center;
+  pointer-events: none;
+}
+.empty-state h1 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-display-size); line-height: var(--text-display-lh);
+  letter-spacing: var(--text-display-track);
+  color: var(--color-ink);
+}
+
+/* Elements that are driven by the timeline */
+[data-anim] { will-change: opacity, transform; }
+</style>
+</head>
+<body>
+<div class="viewport" id="viewport">
+  <div class="stage" id="stage" role="img" aria-label="Indus Cowork demo: researching how Indian D2C brands launch on WhatsApp for Acme Skincare">
+    <div class="chrome">
+      <div class="panel">
+
+        <header class="header">
+          <div class="header-title"><span class="brand-dot">A</span>Acme Skincare launch</div>
+          <nav class="chapters" aria-hidden="true">
+            <span class="chapter" data-chapter="0">Research</span>
+            <span class="chapter" data-chapter="1">Data analysis</span>
+            <span class="chapter" data-chapter="2">Presentations</span>
+            <span class="chapter" data-chapter="3">Connectors</span>
+            <span class="chapter" data-chapter="4">Workflows</span>
+          </nav>
+          <div class="header-actions">
+            <span class="icon-btn" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M1.33333 8C1.33333 5.5406 1.33333 4.31089 1.87588 3.4392C2.0766 3.1167 2.32594 2.8362 2.61261 2.61038C3.38744 2.00002 4.48051 2.00002 6.66667 2.00002H9.33333C11.5195 2.00002 12.6125 2.00002 13.3874 2.61038C13.6741 2.8362 13.9234 3.1167 14.1241 3.4392C14.6667 4.31089 14.6667 5.5406 14.6667 8C14.6667 10.4595 14.6667 11.6891 14.1241 12.5609C13.9234 12.8833 13.6741 13.1639 13.3874 13.3897C12.6125 14 11.5195 14 9.33333 14H6.66667C4.48051 14 3.38744 14 2.61261 13.3897C2.32594 13.1639 2.0766 12.8833 1.87588 12.5609C1.33333 11.6891 1.33333 10.4595 1.33333 8Z" stroke="#141414" stroke-width="1.33333"/><path d="M9.66667 2.00002V14" stroke="#141414" stroke-width="1.33333" stroke-linejoin="round"/><path d="M12 4.66671H12.6667M12 6.66673H12.6667" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+        </header>
+
+        <div class="thread-wrap">
+          <div class="thread" id="thread">
+
+            <!-- Scene 1: Research -->
+            <section class="scene" data-scene="0">
+              <div class="bubble-row" data-anim="s1-bubble">
+                <div class="bubble">Research how Indian D2C brands launch on WhatsApp</div>
+              </div>
+
+              <div class="status-swap">
+                <div class="status" data-anim="s1-searching">
+                  <svg viewBox="0 0 16 16" fill="none" data-anim="s1-spinner"><circle cx="8" cy="8" r="6" stroke="#6b7280" stroke-width="1.33" stroke-dasharray="1.5 2.6" stroke-linecap="round"/></svg>
+                  <span class="shimmer" data-anim="s1-shimmer">Searching the web</span>
+                </div>
+                <div class="status" data-anim="s1-searched">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.33" stroke="#80ae4d" stroke-width="1.33"/><path d="M5.5 8.2l1.7 1.7 3.3-3.4" stroke="#80ae4d" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span>Searched the web · 4 sources</span>
+                </div>
+              </div>
+
+              <div class="sources">
+                <div class="source" data-anim="s1-src-1"><span class="cite">1</span>D2C industry report<span class="meta">2025</span></div>
+                <div class="source" data-anim="s1-src-2"><span class="cite">2</span>Founder interview<span class="meta">Podcast</span></div>
+                <div class="source" data-anim="s1-src-3"><span class="cite">3</span>Beauty brand case study<span class="meta">Blog</span></div>
+                <div class="source" data-anim="s1-src-4"><span class="cite">4</span>WhatsApp Business guide<span class="meta">Docs</span></div>
+              </div>
+
+              <div class="answer">
+                <p data-anim="s1-lead">For <strong>Acme Skincare</strong>, the launches that work follow three moves:</p>
+                <ol>
+                  <li data-anim="s1-pt-1"><span class="n">1</span><span>Start with click-to-WhatsApp ads, not a website visit.<span class="cite">1</span></span></li>
+                  <li data-anim="s1-pt-2"><span class="n">2</span><span>Let catalogue messages and order updates carry the sale, with a person for questions.<span class="cite">2</span><span class="cite">3</span></span></li>
+                  <li data-anim="s1-pt-3"><span class="n">3</span><span>Bring buyers back with short reminders, about once a month.<span class="cite">4</span></span></li>
+                </ol>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+        <div class="empty-state" id="empty-state" aria-hidden="true"><h1>What would you like to know?</h1></div>
+
+        <div class="composer-wrap" id="composer-wrap">
+          <div class="composer">
+            <div class="composer-input" id="composer-input"><span class="placeholder">Ask anything…</span></div>
+            <div class="composer-actions">
+              <span class="icon-btn" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M13 8.00007V9.00007C13 11.7615 10.7614 14.0001 8 14.0001C5.23857 14.0001 3 11.7615 3 9.00007V5.33333C3 3.49239 4.49239 2 6.33333 2C8.17427 2 9.66667 3.49239 9.66667 5.33333V9C9.66667 9.92047 8.92047 10.6667 8 10.6667C7.07953 10.6667 6.33333 9.92047 6.33333 9V6.33333" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="spacer"></span>
+              <span class="icon-btn" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M11.3333 4.66667V7.33333C11.3333 9.17427 9.84093 10.6667 8 10.6667C6.15905 10.6667 4.66667 9.17427 4.66667 7.33333V4.66667C4.66667 2.82572 6.15905 1.33333 8 1.33333C9.84093 1.33333 11.3333 2.82572 11.3333 4.66667Z" stroke="#141414" stroke-width="1.33333"/><path d="M13.3333 7.33333C13.3333 10.2789 10.9455 12.6667 8 12.6667M8 12.6667C5.05448 12.6667 2.66667 10.2789 2.66667 7.33333M8 12.6667V14.6667M8 14.6667H10M8 14.6667H6" stroke="#141414" stroke-width="1.33333" stroke-linecap="round"/></svg>
+              </span>
+              <span class="icon-btn send" id="send" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M8 3.66667V12.6667" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7.33333C12 7.33333 9.05407 3.33334 8 3.33333C6.94587 3.33333 4 7.33333 4 7.33333" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+          </div>
+          <div class="disclaimer">AI can make mistakes. Please double-check responses.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  /* ── Timeline helpers ─────────────────────────────────────
+     Every frame is a pure function of time, so the loop is seamless
+     and any moment can be frozen with ?t=<seconds> for review. */
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+  const prog = (t, start, dur) => clamp((t - start) / dur);          // linear 0..1
+  const ease = (t, start, dur) => easeOut(prog(t, start, dur));      // eased 0..1
+
+  const $ = (sel) => document.querySelector(sel);
+  const anim = (name) => document.querySelector(`[data-anim="${name}"]`);
+
+  // Fade + rise in, optionally fade out at the end of the scene
+  function enter(el, p, rise = 8, scaleFrom = 1) {
+    if (!el) return;
+    const s = scaleFrom + (1 - scaleFrom) * p;
+    el.style.opacity = p;
+    el.style.transform = `translateY(${(1 - p) * rise}px) scale(${s})`;
+  }
+
+  const SCENE_LEN = 5;   // seconds per capability
+  const HOLD = 1;        // hold on the last frame before looping
+  const FADE = 0.3;      // scene cross-fade
+
+  const composerInput = $('#composer-input');
+  const composerWrap = $('#composer-wrap');
+  const emptyState = $('#empty-state');
+  let lift = 0; // px the composer rises to sit centred under the heading
+
+  // Measure in unscaled layout px: centre heading + composer as one group in the panel
+  function measureEmptyState() {
+    const panel = composerWrap.parentElement;
+    const composerH = composerWrap.querySelector('.composer').offsetHeight;
+    const headH = emptyState.offsetHeight;
+    const gap = 24; // --space-6, as in the Prompt frame
+    const groupTop = (panel.clientHeight - (headH + gap + composerH)) / 2;
+    lift = composerWrap.offsetTop - (groupTop + headH + gap);
+    emptyState.style.top = groupTop + 'px';
+  }
+  measureEmptyState();
+  if (document.fonts) document.fonts.ready.then(measureEmptyState);
+
+  // 1 = composer centred under the heading, 0 = docked at the bottom
+  function setEmptyState(p, headingOpacity) {
+    composerWrap.style.transform = `translateY(${-lift * p}px)`;
+    emptyState.style.opacity = headingOpacity;
+    emptyState.style.transform = `translateY(${-(1 - headingOpacity) * 8}px)`;
+    composerWrap.querySelector('.disclaimer').style.opacity = 1 - p;
+  }
+  const sendBtn = $('#send');
+  const thread = $('#thread');
+  const chapters = [...document.querySelectorAll('.chapter')];
+  const sceneEls = [...document.querySelectorAll('.scene')];
+
+  function setComposer(text, caret) {
+    if (!text) {
+      composerInput.innerHTML = '<span class="placeholder">Ask anything…</span>';
+    } else {
+      composerInput.textContent = text;
+      if (caret) composerInput.insertAdjacentHTML('beforeend', '<span class="caret"></span>');
+    }
+  }
+
+  // Shared prompt beat: type into the composer, press send, bubble lands
+  function promptBeat(t, prompt, bubbleName) {
+    const typeStart = 0.3, typeDur = 1.2, sendAt = 1.6;
+    const typed = Math.round(prompt.length * prog(t, typeStart, typeDur));
+    const caretOn = t < sendAt && Math.floor(t * 2.5) % 2 === 0;
+    setComposer(t < sendAt ? prompt.slice(0, typed) : '', caretOn || (t >= typeStart && t < typeStart + typeDur));
+
+    const hasText = t >= typeStart && t < sendAt;
+    const press = t >= sendAt - 0.08 && t < sendAt + 0.12 ? 0.9 : 1;
+    sendBtn.style.opacity = hasText ? 1 : 0.5;
+    sendBtn.style.transform = `scale(${press})`;
+
+    enter(anim(bubbleName), ease(t, sendAt + 0.15, 0.35), 10);
+    return sendAt;
+  }
+
+  /* ── Scene 1: Research ───────────────────────────────────── */
+  function research(t) {
+    const sent = promptBeat(t, 'Research how Indian D2C brands launch on WhatsApp', 's1-bubble');
+
+    // Opens on the empty state; on send the heading lifts away and the composer docks
+    setEmptyState(1 - ease(t, sent, 0.5), 1 - ease(t, sent, 0.25));
+
+    const searchIn = ease(t, sent + 0.3, 0.3);
+    const doneAt = 3.3;
+    const swap = ease(t, doneAt, 0.25);
+    const searching = anim('s1-searching');
+    searching.style.opacity = searchIn * (1 - swap);
+    anim('s1-searched').style.opacity = swap;
+    anim('s1-spinner').style.transform = `rotate(${t * 240}deg)`;
+    anim('s1-shimmer').style.backgroundPosition = `${100 - ((t * 60) % 300)}% 0`;
+
+    // Sources stream in one by one
+    [2.15, 2.45, 2.75, 3.05].forEach((at, i) => {
+      enter(anim(`s1-src-${i + 1}`), ease(t, at, 0.3), 6, 0.96);
+    });
+
+    // Cited summary builds line by line → end frame
+    enter(anim('s1-lead'), ease(t, 3.45, 0.35), 6);
+    [3.7, 3.95, 4.2].forEach((at, i) => enter(anim(`s1-pt-${i + 1}`), ease(t, at, 0.35), 6));
+  }
+
+  const scenes = [research];
+  const TOTAL = scenes.length * SCENE_LEN + HOLD;
+
+  function render(time) {
+    const T = ((time % TOTAL) + TOTAL) % TOTAL;
+    const idx = Math.min(scenes.length - 1, Math.floor(T / SCENE_LEN));
+    const t = T - idx * SCENE_LEN;           // local scene time (runs into the hold on the last scene)
+
+    sceneEls.forEach((el, i) => el.classList.toggle('is-live', i === idx));
+    chapters.forEach((el, i) => el.classList.toggle('is-active', i === idx));
+
+    setEmptyState(0, 0);   // docked by default; scene 1 opens on the empty state
+    scenes[idx](t);
+
+    // Cross-fade the thread at scene boundaries (and around the loop point)
+    const isLast = idx === scenes.length - 1;
+    // Last scene: thread fades out first, then the composer returns (no overlap)
+    const outStart = isLast ? SCENE_LEN + HOLD - 2 * FADE : SCENE_LEN - FADE;
+    const returnStart = SCENE_LEN + HOLD - FADE;
+    const fadeIn = ease(t, 0, FADE);
+    const fadeOut = 1 - prog(t, outStart, FADE);
+    thread.style.opacity = Math.min(fadeIn, fadeOut);
+
+    // Loop point: return to the empty state so frame 0 follows seamlessly
+    if (isLast && t > outStart) {
+      setComposer('', false);
+      sendBtn.style.opacity = 0.5;
+      const back = ease(t, returnStart, FADE);
+      setEmptyState(back, ease(t, returnStart + FADE / 3, FADE * 2 / 3));
+    }
+  }
+
+  /* ── Playback ─────────────────────────────────────────────── */
+  const params = new URLSearchParams(location.search);
+  const frozen = params.has('t') ? parseFloat(params.get('t')) : null;
+
+  let elapsed = 0, last = null, running = true;
+  function tick(now) {
+    if (last !== null && running) elapsed += (now - last) / 1000;
+    last = now;
+    render(elapsed);
+    requestAnimationFrame(tick);
+  }
+
+  if (frozen !== null) {
+    render(frozen);
+  } else {
+    // Pause while the tab or the hero is off-screen
+    document.addEventListener('visibilitychange', () => { running = !document.hidden; });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => { running = e.isIntersecting && !document.hidden; })
+        .observe(document.getElementById('stage'));
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ── Scale the fixed-size stage to fit, centred ───────────── */
+  const stage = document.getElementById('stage');
+  const viewport = document.getElementById('viewport');
+  function fit() {
+    const s = Math.min(viewport.clientWidth / 1000, viewport.clientHeight / 625);
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  new ResizeObserver(fit).observe(viewport);
+  fit();
+})();
+</script>
+</body>
+</html>
