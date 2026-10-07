@@ -38,9 +38,15 @@
 
   --shadow-composer: 0 12px 12px #f0f0f0;
 
+  /* Acme Skincare deck (story content, scoped to the slides only) */
+  --acme-green: #1f5c4a;
+  --acme-cream: #f3efe6;
+  --acme-sage:  #5f8f7e;
+
   /* demo-only layout constants */
   --stage-w: 1000px;
-  --stage-h: 625px;
+  --timeline-h: 32px;
+  --chrome-h: 625px;
   --col-w: 640px;
 }
 
@@ -51,8 +57,6 @@ body {
   font-family: var(--font-sans);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
-  display: grid;
-  place-items: center;
   overflow: hidden;
 }
 
@@ -61,14 +65,53 @@ body {
 .stage {
   position: absolute; left: 50%; top: 50%;
   width: var(--stage-w);
-  height: var(--stage-h);
+  display: flex; flex-direction: column; gap: var(--space-4);
   transform-origin: center center;
   transform: translate(-50%, -50%);
 }
 
+/* ── Capability timeline (sits above the app, separate from the flow) ── */
+.timeline {
+  height: var(--timeline-h);
+  padding: 0 var(--space-6);
+  list-style: none;
+  display: flex; align-items: center; gap: var(--space-3);
+}
+.step {
+  flex: none;
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-small-size); line-height: var(--text-small-lh);
+  letter-spacing: var(--text-small-track);
+  color: var(--color-ink-placeholder);
+  transition: color .3s;
+}
+.step .dot {
+  width: 8px; height: 8px; border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-border-strong);
+  background: var(--color-surface);
+  transition: background-color .3s, border-color .3s, box-shadow .3s;
+}
+.step.is-done { color: var(--color-ink-secondary); }
+.step.is-done .dot { background: var(--color-ink); border-color: var(--color-ink); }
+.step.is-active { color: var(--color-ink); }
+.step.is-active .dot {
+  background: var(--color-ink); border-color: var(--color-ink);
+  box-shadow: 0 0 0 4px var(--color-surface-hover);
+}
+.link {
+  flex: 1 1 auto; position: relative;
+  height: 1.5px; border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+.link .fill {
+  position: absolute; inset: 0 auto 0 0; width: 0;
+  background: var(--color-ink);
+}
+
 /* App chrome: grey frame with an inset white panel, as in the Figma frames */
 .chrome {
-  width: 100%; height: 100%;
+  height: var(--chrome-h);
   background: var(--color-surface-sunken);
   border-radius: var(--radius-xl);
   padding: var(--space-2);
@@ -87,34 +130,12 @@ body {
   flex: none;
   height: var(--size-panel-header);
   padding: 0 var(--space-7);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  display: flex; align-items: center; justify-content: space-between;
 }
 .header-title {
   font-size: var(--text-heading-size); line-height: var(--text-heading-lh);
   letter-spacing: var(--text-heading-track);
-  display: flex; align-items: center; gap: var(--space-2);
 }
-.header-title .brand-dot {
-  width: 20px; height: 20px; border-radius: var(--radius-sm);
-  background: var(--color-surface-sunken); border: 1px solid var(--color-border);
-  display: grid; place-items: center;
-  font-size: 11px; font-weight: var(--weight-semibold); color: var(--color-ink-secondary);
-}
-.chapters { display: flex; gap: var(--space-0-5); }
-.chapter {
-  height: var(--size-icon-btn-sm);
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-pill);
-  display: flex; align-items: center;
-  font-size: var(--text-small-size); line-height: var(--text-small-lh);
-  letter-spacing: var(--text-small-track);
-  color: var(--color-ink-placeholder);
-  transition: background-color .3s, color .3s;
-}
-.chapter.is-active { background: var(--color-surface-hover); color: var(--color-ink); }
-.header-actions { justify-self: end; display: flex; }
 .icon-btn {
   width: var(--size-icon-btn); height: var(--size-icon-btn);
   border-radius: var(--radius-pill);
@@ -123,18 +144,24 @@ body {
 }
 .icon-btn svg { width: var(--size-icon); height: var(--size-icon); display: block; }
 
-/* Thread */
-.thread-wrap { flex: 1 1 auto; min-height: 0; display: flex; justify-content: center; }
+/* Thread (auto-scrolls like a chat as content arrives) */
+.thread-wrap {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; justify-content: center;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
+}
 .thread {
+  position: relative;
   width: var(--col-w);
-  padding-top: var(--space-2);
-  display: flex; flex-direction: column;
-  gap: var(--space-4);
+  padding-top: var(--space-5);
+  align-self: flex-start;
 }
 .scene { display: none; flex-direction: column; gap: var(--space-4); }
 .scene.is-live { display: flex; }
 
-.bubble-row { display: flex; justify-content: flex-end; }
+.user-group { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); }
 .bubble {
   max-width: 80%;
   background: var(--color-surface-sunken);
@@ -144,24 +171,49 @@ body {
   letter-spacing: var(--text-body-track);
 }
 
+/* Tool-run status line: working (shimmer) swaps to done (check) */
+.status-swap { position: relative; height: 24px; }
 .status {
+  position: absolute; inset: 0 auto auto 0;
   display: flex; align-items: center; gap: var(--space-2);
-  height: 24px;
+  height: 24px; white-space: nowrap;
   font-size: var(--text-ui-size); line-height: var(--text-ui-lh);
   letter-spacing: var(--text-ui-track);
   color: var(--color-ink-muted);
 }
+.status.is-static { position: static; }
 .status svg { width: var(--size-icon); height: var(--size-icon); flex: none; }
-.status .shimmer {
+.shimmer {
   background: linear-gradient(90deg, var(--color-ink-muted) 0%, var(--color-ink-muted) 35%, var(--color-ink-faint) 50%, var(--color-ink-muted) 65%, var(--color-ink-muted) 100%);
   background-size: 300% 100%;
   -webkit-background-clip: text; background-clip: text;
   color: transparent;
 }
-.status-swap { position: relative; height: 24px; }
-.status-swap > .status { position: absolute; inset: 0 auto auto 0; }
 
-/* Sources */
+/* File card (Figma artifact card) */
+.file-card {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 10px var(--space-4) 10px var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.file-card .name {
+  font-size: var(--text-ui-size); line-height: 22.5px; letter-spacing: var(--text-ui-track);
+}
+.file-card .meta {
+  font-size: var(--text-caption-size); line-height: var(--text-caption-lh);
+  color: var(--color-ink-placeholder);
+}
+.file-tile {
+  width: 36px; height: 36px; flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-success-bg); color: var(--color-success-fg);
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: var(--weight-semibold); letter-spacing: 0.4px;
+}
+
+/* Research: sources + cited answer */
 .sources { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .source {
   display: flex; align-items: center; gap: var(--space-2);
@@ -175,7 +227,6 @@ body {
 }
 .source .cite { width: 26px; height: 26px; }
 .source .meta { color: var(--color-ink-placeholder); }
-
 .cite {
   display: inline-grid; place-items: center;
   min-width: 18px; height: 18px; padding: 0 5px;
@@ -185,18 +236,155 @@ body {
   font-size: var(--text-caption-size); line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-
-/* Answer prose (assistant messages sit on the panel, no card, as in Figma) */
-.answer { display: flex; flex-direction: column; gap: var(--space-3); }
-.answer p, .answer li {
+.prose p, .prose li {
   font-size: var(--text-body-size); line-height: var(--text-body-lh);
   letter-spacing: var(--text-body-track);
 }
-.answer strong { font-weight: var(--weight-semibold); }
+.prose strong { font-weight: var(--weight-semibold); }
+.answer { display: flex; flex-direction: column; gap: var(--space-3); }
 .answer ol { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
 .answer li { display: grid; grid-template-columns: 22px 1fr; }
 .answer li .n { color: var(--color-ink-placeholder); font-variant-numeric: tabular-nums; }
 .answer .cite { margin-left: var(--space-1); vertical-align: 2px; }
+
+/* Data analysis: funnel chart */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.funnel { padding: var(--space-3) var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; }
+.card-title {
+  font-size: var(--text-ui-size); line-height: var(--text-ui-lh); letter-spacing: var(--text-ui-track);
+  font-weight: var(--weight-medium);
+}
+.card-meta { font-size: var(--text-caption-size); line-height: var(--text-caption-lh); color: var(--color-ink-placeholder); }
+.funnel-rows { display: flex; flex-direction: column; gap: var(--space-0-5); }
+.funnel-row {
+  display: grid; grid-template-columns: 112px 1fr 64px; align-items: center;
+  column-gap: var(--space-3);
+  height: 26px; padding: 0 var(--space-2);
+  font-size: var(--text-small-size); line-height: var(--text-small-lh); letter-spacing: var(--text-small-track);
+}
+.funnel-row .label { color: var(--color-ink-secondary); }
+.funnel-row .value { text-align: right; font-variant-numeric: tabular-nums; }
+.funnel-row .track { display: block; height: 18px; }
+.funnel-row .bar {
+  display: block;
+  height: 100%; width: 0;
+  background: var(--color-ink);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+}
+.drop-zone { position: relative; display: flex; flex-direction: column; gap: var(--space-0-5); }
+.drop-band {
+  position: absolute; inset: -2px 0;
+  background: var(--color-danger-bg);
+  border-radius: var(--radius-sm);
+}
+.drop-zone .funnel-row { position: relative; }
+.drop-badge {
+  position: absolute; right: 84px; top: 50%;
+  display: flex; align-items: center; gap: var(--space-1);
+  height: 22px; padding: 0 var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption-size); line-height: var(--text-caption-lh);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+.drop-badge svg { width: 12px; height: 12px; }
+
+/* Presentations: slide fan */
+.fan { position: relative; height: 196px; }
+.slide {
+  position: absolute; left: 50%; top: 50%;
+  width: 236px; height: 133px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-composer);
+  overflow: hidden;
+  padding: var(--space-4);
+  display: flex; flex-direction: column;
+  font-family: var(--font-display);
+  background: var(--acme-cream); color: var(--acme-green);
+}
+.slide .kicker { font-family: var(--font-sans); font-size: 8px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .8; }
+.slide .title { font-size: 17px; line-height: 20px; letter-spacing: -0.2px; font-weight: var(--weight-medium); margin-top: var(--space-1); }
+.slide-cover { background: var(--acme-green); color: var(--acme-cream); border-color: var(--acme-green); justify-content: space-between; }
+.slide-cover .title { font-size: 22px; line-height: 26px; }
+.slide-cover .rule { width: 32px; height: 1.5px; background: var(--acme-sage); margin: var(--space-2) 0 var(--space-1); }
+.slide-cover .foot { font-family: var(--font-sans); font-size: 8px; opacity: .75; display: flex; gap: var(--space-3); }
+.mini-funnel { margin-top: var(--space-2); display: flex; flex-direction: column; gap: 4px; font-family: var(--font-sans); font-size: 8px; }
+.mini-funnel div { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 6px; }
+.mini-funnel i { display: block; height: 9px; background: var(--acme-green); border-radius: 0 2px 2px 0; }
+.mini-funnel .lost i { background: var(--acme-sage); }
+.mini-list { margin-top: var(--space-2); list-style: none; font-family: var(--font-sans); font-size: 9px; line-height: 13px; display: flex; flex-direction: column; gap: 6px; }
+.mini-list li { display: grid; grid-template-columns: 14px 1fr; border-top: 1px solid rgba(31, 92, 74, .18); padding-top: 5px; }
+
+/* Connectors */
+.section-head { display: flex; flex-direction: column; gap: var(--space-1); }
+.section-head .h { font-size: var(--text-body-size); line-height: var(--text-body-lh); letter-spacing: var(--text-body-track); font-weight: var(--weight-medium); }
+.section-head .sub { font-size: var(--text-small-size); line-height: var(--text-small-lh); letter-spacing: var(--text-small-track); color: var(--color-ink-placeholder); }
+.connectors { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.connector {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-1);
+}
+.connector .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+.connector .logo { width: 20px; height: 20px; display: block; }
+.connector .name { font-size: var(--text-ui-size); line-height: 18px; letter-spacing: var(--text-ui-track); font-weight: var(--weight-medium); }
+.connector .desc { font-size: var(--text-small-size); line-height: var(--text-small-lh); letter-spacing: var(--text-small-track); color: var(--color-ink-placeholder); }
+.connector .state { position: relative; height: 20px; margin-top: var(--space-2); }
+.connector .state > * { position: absolute; left: 0; top: 0; }
+.toggle {
+  position: relative; width: 32px; height: 18px; flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+.toggle .on { position: absolute; inset: 0; border-radius: inherit; background: var(--color-ink); opacity: 0; }
+.toggle .knob {
+  position: absolute; left: 2px; top: 2px;
+  width: 14px; height: 14px; border-radius: var(--radius-pill);
+  background: var(--color-surface);
+}
+.muted-label { font-size: var(--text-caption-size); line-height: 20px; color: var(--color-ink-placeholder); }
+.badge {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  height: 20px; padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption-size); line-height: var(--text-caption-lh);
+  white-space: nowrap;
+}
+.badge-success { background: var(--color-success-bg); color: var(--color-success-fg); }
+.badge-neutral { background: var(--color-surface-sunken); color: var(--color-ink); }
+.badge svg { width: 12px; height: 12px; }
+
+/* Workflows: scheduled-task table (Figma "Scheduled tasks") */
+.task-table { overflow: hidden; }
+.task-grid {
+  display: grid;
+  grid-template-columns: 212px 106px 64px 112px 1fr;
+}
+.task-grid > div {
+  display: flex; align-items: center;
+  padding: 0 10px;
+  white-space: nowrap;
+  font-size: var(--text-small-size); line-height: var(--text-small-lh); letter-spacing: var(--text-small-track);
+}
+.task-grid .th { height: 44px; color: var(--color-ink-secondary); border-bottom: 1px solid var(--color-border); }
+.task-grid .td { height: 60px; }
+.task-name { gap: var(--space-3); font-size: var(--text-ui-size) !important; letter-spacing: var(--text-ui-track) !important; }
+.task-icon {
+  width: 32px; height: 32px; flex: none;
+  border-radius: var(--radius-sm); background: var(--color-info-bg);
+  display: grid; place-items: center;
+}
+.task-icon svg { width: 16px; height: 16px; }
+.td.next { color: var(--color-ink-secondary); }
 
 /* Composer */
 .composer-wrap { flex: none; display: flex; flex-direction: column; align-items: center; padding: 0 var(--space-7); }
@@ -208,7 +396,11 @@ body {
   box-shadow: var(--shadow-composer);
   padding: var(--space-2);
   display: flex; flex-direction: column; gap: var(--space-2);
+  transition: border-color .2s;
 }
+.composer-attach { height: 0; position: relative; }
+.composer-attach .file-card { position: absolute; left: 0; top: 0; padding: 6px var(--space-3) 6px 6px; border-radius: var(--radius-md); }
+.composer-attach .file-tile { width: 30px; height: 30px; font-size: 9px; }
 .composer-input {
   min-height: 28px;
   padding: var(--space-1) var(--space-2) 0;
@@ -244,60 +436,66 @@ body {
   color: var(--color-ink);
 }
 
-/* Elements that are driven by the timeline */
 [data-anim] { will-change: opacity, transform; }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-check" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.33" fill="none" stroke="#80ae4d" stroke-width="1.33"/><path d="M5.5 8.2l1.7 1.7 3.3-3.4" fill="none" stroke="#80ae4d" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-spin" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#6b7280" stroke-width="1.33" stroke-dasharray="1.5 2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-slack" viewBox="0 0 20 20"><path d="M4.20633 12.6031C4.20633 13.7619 3.26984 14.6984 2.11109 14.6984C0.952344 14.6984 0.0158594 13.7619 0.0158594 12.6031C0.0158594 11.4445 0.952344 10.508 2.11117 10.508H4.20625L4.20633 12.6031ZM5.25398 12.6031C5.25398 11.4445 6.19047 10.508 7.34922 10.508C8.50797 10.508 9.44445 11.4445 9.44445 12.6032V17.8413C9.44445 19 8.50797 19.9366 7.34914 19.9366C6.19055 19.9366 5.25398 19 5.25398 17.8413V12.6031Z" fill="#E01E5A"/><path d="M7.34922 4.19047C6.19047 4.19047 5.25391 3.25398 5.25391 2.09523C5.25391 0.936484 6.19055 0 7.34922 0C8.50789 0 9.44445 0.936484 9.44445 2.09523V4.19055L7.34922 4.19047ZM7.34922 5.25398C8.50797 5.25398 9.44445 6.19047 9.44445 7.34922C9.44445 8.50797 8.50797 9.44445 7.34914 9.44445H2.09531C0.936484 9.44445 0 8.50797 0 7.34914C0 6.19055 0.936484 5.25398 2.09523 5.25398H7.34922Z" fill="#36C5F0"/><path d="M15.7461 7.34922C15.7461 6.19047 16.6826 5.25391 17.8413 5.25391C18.9999 5.25391 19.9366 6.19047 19.9366 7.34922C19.9366 8.50797 19 9.44445 17.8413 9.44445H15.7461V7.34922ZM14.6984 7.34922C14.6984 8.50797 13.7619 9.44445 12.6031 9.44445C11.4445 9.44445 10.508 8.50797 10.508 7.34914V2.09531C10.508 0.936484 11.4445 0 12.6031 0C13.7618 0 14.6984 0.936484 14.6984 2.09523L14.6984 7.34922Z" fill="#2EB67D"/><path d="M12.6031 15.7461C13.7619 15.7461 14.6984 16.6826 14.6984 17.8413C14.6984 18.9999 13.7619 19.9366 12.6031 19.9366C11.4445 19.9366 10.508 19 10.508 17.8413V15.7461H12.6031ZM12.6031 14.6984C11.4445 14.6984 10.508 13.7619 10.508 12.6031C10.508 11.4445 11.4445 10.508 12.6032 10.508H17.8571C19.0159 10.508 19.9524 11.4445 19.9524 12.6032C19.9524 13.762 19.0159 14.6984 17.8571 14.6984H12.6031Z" fill="#ECB22E"/></symbol>
+    <symbol id="i-gmail" viewBox="0 0 20 20"><path d="M1.5 6.2v8.6c0 .7.6 1.2 1.2 1.2h2.8V8.9L1.5 6.2z" fill="#4285F4"/><path d="M14.5 16h2.8c.7 0 1.2-.5 1.2-1.2V6.2l-4 2.7V16z" fill="#34A853"/><path d="M14.5 4.6v4.3l4-2.7V5c0-1.2-1.4-1.9-2.4-1.2l-1.6.8z" fill="#FBBC04"/><path d="M5.5 8.9V4.6L10 7.9l4.5-3.3v4.3L10 12.2 5.5 8.9z" fill="#EA4335"/><path d="M1.5 5v1.2l4 2.7V4.6l-1.6-.8C2.9 3.1 1.5 3.8 1.5 5z" fill="#C5221F"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 20 20"><path d="M6.6 2.5h6.8l6.1 10.6h-6.8L6.6 2.5z" fill="#FFBA00"/><path d="M6.6 2.5L.5 13.1l3.4 5.9 6.1-10.6-3.4-5.9z" fill="#0F9D58"/><path d="M3.9 19h12.2l3.4-5.9H7.3L3.9 19z" fill="#4285F4"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 16 16"><path d="M10.6667 1.33333V4M5.33333 1.33333V4" fill="none" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.66667 2.66667H7.33333C4.81917 2.66667 3.5621 2.66667 2.78105 3.44771C2 4.22877 2 5.48584 2 8V9.33333C2 11.8475 2 13.1046 2.78105 13.8856C3.5621 14.6667 4.81917 14.6667 7.33333 14.6667H8.66667C11.1808 14.6667 12.4379 14.6667 13.2189 13.8856C14 13.1046 14 11.8475 14 9.33333V8C14 5.48584 14 4.22877 13.2189 3.44771C12.4379 2.66667 11.1808 2.66667 8.66667 2.66667Z" fill="none" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 6.66667H14" fill="none" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.997 9.33333H8.003M7.997 12H8.003M10.6607 9.33333H10.6667M5.33333 9.33333H5.33931M5.33333 12H5.33931" fill="none" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 12 12"><path d="M6 2.5v7M3 6.5l3 3 3-3" fill="none" stroke="#141414" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
 <div class="viewport" id="viewport">
-  <div class="stage" id="stage" role="img" aria-label="Indus Cowork demo: researching how Indian D2C brands launch on WhatsApp for Acme Skincare">
+  <div class="stage" id="stage" role="img" aria-label="Indus Cowork demo for Acme Skincare: research, data analysis, a launch deck, connecting Slack, Gmail and Drive, and a scheduled weekly update">
+
+    <ol class="timeline" aria-hidden="true">
+      <li class="step"><span class="dot"></span>Research</li>
+      <li class="link"><span class="fill"></span></li>
+      <li class="step"><span class="dot"></span>Data analysis</li>
+      <li class="link"><span class="fill"></span></li>
+      <li class="step"><span class="dot"></span>Presentations</li>
+      <li class="link"><span class="fill"></span></li>
+      <li class="step"><span class="dot"></span>Connectors</li>
+      <li class="link"><span class="fill"></span></li>
+      <li class="step"><span class="dot"></span>Workflows</li>
+    </ol>
+
     <div class="chrome">
-      <div class="panel">
+      <div class="panel" id="panel">
 
         <header class="header">
-          <div class="header-title"><span class="brand-dot">A</span>Acme Skincare launch</div>
-          <nav class="chapters" aria-hidden="true">
-            <span class="chapter" data-chapter="0">Research</span>
-            <span class="chapter" data-chapter="1">Data analysis</span>
-            <span class="chapter" data-chapter="2">Presentations</span>
-            <span class="chapter" data-chapter="3">Connectors</span>
-            <span class="chapter" data-chapter="4">Workflows</span>
-          </nav>
-          <div class="header-actions">
-            <span class="icon-btn" aria-hidden="true">
-              <svg viewBox="0 0 16 16" fill="none"><path d="M1.33333 8C1.33333 5.5406 1.33333 4.31089 1.87588 3.4392C2.0766 3.1167 2.32594 2.8362 2.61261 2.61038C3.38744 2.00002 4.48051 2.00002 6.66667 2.00002H9.33333C11.5195 2.00002 12.6125 2.00002 13.3874 2.61038C13.6741 2.8362 13.9234 3.1167 14.1241 3.4392C14.6667 4.31089 14.6667 5.5406 14.6667 8C14.6667 10.4595 14.6667 11.6891 14.1241 12.5609C13.9234 12.8833 13.6741 13.1639 13.3874 13.3897C12.6125 14 11.5195 14 9.33333 14H6.66667C4.48051 14 3.38744 14 2.61261 13.3897C2.32594 13.1639 2.0766 12.8833 1.87588 12.5609C1.33333 11.6891 1.33333 10.4595 1.33333 8Z" stroke="#141414" stroke-width="1.33333"/><path d="M9.66667 2.00002V14" stroke="#141414" stroke-width="1.33333" stroke-linejoin="round"/><path d="M12 4.66671H12.6667M12 6.66673H12.6667" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-          </div>
+          <div class="header-title">Acme Skincare launch</div>
+          <span class="icon-btn" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M1.33333 8C1.33333 5.5406 1.33333 4.31089 1.87588 3.4392C2.0766 3.1167 2.32594 2.8362 2.61261 2.61038C3.38744 2.00002 4.48051 2.00002 6.66667 2.00002H9.33333C11.5195 2.00002 12.6125 2.00002 13.3874 2.61038C13.6741 2.8362 13.9234 3.1167 14.1241 3.4392C14.6667 4.31089 14.6667 5.5406 14.6667 8C14.6667 10.4595 14.6667 11.6891 14.1241 12.5609C13.9234 12.8833 13.6741 13.1639 13.3874 13.3897C12.6125 14 11.5195 14 9.33333 14H6.66667C4.48051 14 3.38744 14 2.61261 13.3897C2.32594 13.1639 2.0766 12.8833 1.87588 12.5609C1.33333 11.6891 1.33333 10.4595 1.33333 8Z" stroke="#141414" stroke-width="1.33333"/><path d="M9.66667 2.00002V14" stroke="#141414" stroke-width="1.33333" stroke-linejoin="round"/><path d="M12 4.66671H12.6667M12 6.66673H12.6667" stroke="#141414" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
         </header>
 
-        <div class="thread-wrap">
+        <div class="thread-wrap" id="thread-wrap">
           <div class="thread" id="thread">
 
             <!-- Scene 1: Research -->
             <section class="scene" data-scene="0">
-              <div class="bubble-row" data-anim="s1-bubble">
-                <div class="bubble">Research how Indian D2C brands launch on WhatsApp</div>
+              <div class="user-group">
+                <div class="bubble" data-anim="s1-bubble">Research how Indian D2C brands launch on WhatsApp</div>
               </div>
-
               <div class="status-swap">
-                <div class="status" data-anim="s1-searching">
-                  <svg viewBox="0 0 16 16" fill="none" data-anim="s1-spinner"><circle cx="8" cy="8" r="6" stroke="#6b7280" stroke-width="1.33" stroke-dasharray="1.5 2.6" stroke-linecap="round"/></svg>
-                  <span class="shimmer" data-anim="s1-shimmer">Searching the web</span>
-                </div>
-                <div class="status" data-anim="s1-searched">
-                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.33" stroke="#80ae4d" stroke-width="1.33"/><path d="M5.5 8.2l1.7 1.7 3.3-3.4" stroke="#80ae4d" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <span>Searched the web · 4 sources</span>
-                </div>
+                <div class="status" data-anim="s1-working"><svg data-anim="s1-spin"><use href="#i-spin"/></svg><span class="shimmer" data-anim="s1-shimmer">Searching the web</span></div>
+                <div class="status" data-anim="s1-done"><svg><use href="#i-check"/></svg><span>Searched the web · 4 sources</span></div>
               </div>
-
               <div class="sources">
                 <div class="source" data-anim="s1-src-1"><span class="cite">1</span>D2C industry report<span class="meta">2025</span></div>
                 <div class="source" data-anim="s1-src-2"><span class="cite">2</span>Founder interview<span class="meta">Podcast</span></div>
                 <div class="source" data-anim="s1-src-3"><span class="cite">3</span>Beauty brand case study<span class="meta">Blog</span></div>
                 <div class="source" data-anim="s1-src-4"><span class="cite">4</span>WhatsApp Business guide<span class="meta">Docs</span></div>
               </div>
-
-              <div class="answer">
+              <div class="answer prose">
                 <p data-anim="s1-lead">For <strong>Acme Skincare</strong>, the launches that work follow three moves:</p>
                 <ol>
                   <li data-anim="s1-pt-1"><span class="n">1</span><span>Start with click-to-WhatsApp ads, not a website visit.<span class="cite">1</span></span></li>
@@ -307,13 +505,129 @@ body {
               </div>
             </section>
 
+            <!-- Scene 2: Data analysis -->
+            <section class="scene" data-scene="1">
+              <div class="user-group">
+                <div class="file-card" data-anim="s2-file">
+                  <span class="file-tile">CSV</span>
+                  <div><div class="name">acme-sales.csv</div><div class="meta">CSV · 2.4 MB</div></div>
+                </div>
+                <div class="bubble" data-anim="s2-bubble">Where are we losing users?</div>
+              </div>
+              <div class="status-swap">
+                <div class="status" data-anim="s2-working"><svg data-anim="s2-spin"><use href="#i-spin"/></svg><span class="shimmer" data-anim="s2-shimmer">Analysing acme-sales.csv</span></div>
+                <div class="status" data-anim="s2-done"><svg><use href="#i-check"/></svg><span>Ran code · Analysed acme-sales.csv</span></div>
+              </div>
+              <div class="card funnel" data-anim="s2-card">
+                <div class="card-head"><span class="card-title">WhatsApp funnel · last 30 days</span><span class="card-meta">Shoppers</span></div>
+                <div class="funnel-rows">
+                  <div class="funnel-row"><span class="label">Ad clicks</span><span class="track"><span class="bar" data-bar="s2-bar-1" data-w="100"></span></span><span class="value">12,400</span></div>
+                  <div class="drop-zone">
+                    <span class="drop-band" data-anim="s2-band"></span>
+                    <div class="funnel-row"><span class="label">Chat started</span><span class="track"><span class="bar" data-bar="s2-bar-2" data-w="50"></span></span><span class="value">6,200</span></div>
+                    <div class="funnel-row"><span class="label">Added to cart</span><span class="track"><span class="bar" data-bar="s2-bar-3" data-w="16.9"></span></span><span class="value">2,100</span></div>
+                    <span class="drop-badge" data-anim="s2-badge"><svg><use href="#i-down"/></svg>66% drop-off</span>
+                  </div>
+                  <div class="funnel-row"><span class="label">Paid</span><span class="track"><span class="bar" data-bar="s2-bar-4" data-w="5.2"></span></span><span class="value">640</span></div>
+                </div>
+              </div>
+              <div class="prose" data-anim="s2-note"><p>The biggest leak is after the first chat reply: <strong>2 in 3 shoppers</strong> leave before adding to cart.</p></div>
+            </section>
+
+            <!-- Scene 3: Presentations -->
+            <section class="scene" data-scene="2">
+              <div class="user-group">
+                <div class="bubble" data-anim="s3-bubble">Turn this into a launch deck</div>
+              </div>
+              <div class="status-swap">
+                <div class="status" data-anim="s3-working"><svg data-anim="s3-spin"><use href="#i-spin"/></svg><span class="shimmer" data-anim="s3-shimmer">Generating slides</span></div>
+                <div class="status" data-anim="s3-done"><svg><use href="#i-check"/></svg><span>Created Acme-Skincare-Launch.pptx · 3 slides</span></div>
+              </div>
+              <div class="fan" data-anim="s3-fan">
+                <div class="slide" data-slide="left">
+                  <span class="kicker">02 · Funnel</span>
+                  <span class="title">Where we lose shoppers</span>
+                  <div class="mini-funnel">
+                    <div><span>Ad clicks</span><i style="width:100%"></i></div>
+                    <div><span>Chat started</span><i style="width:50%"></i></div>
+                    <div class="lost"><span>Added to cart</span><i style="width:17%"></i></div>
+                    <div><span>Paid</span><i style="width:6%"></i></div>
+                  </div>
+                </div>
+                <div class="slide" data-slide="right">
+                  <span class="kicker">03 · Plan</span>
+                  <span class="title">Launch in three moves</span>
+                  <ol class="mini-list">
+                    <li><span>1</span>Click-to-WhatsApp ads</li>
+                    <li><span>2</span>Catalogue + order updates</li>
+                    <li><span>3</span>Monthly reminders</li>
+                  </ol>
+                </div>
+                <div class="slide slide-cover" data-slide="center">
+                  <span class="kicker">Acme Skincare</span>
+                  <div><span class="title">WhatsApp launch plan</span><div class="rule"></div></div>
+                  <span class="foot"><span>October 2026</span><span>Growth team</span></span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Scene 4: Connectors -->
+            <section class="scene" data-scene="3">
+              <div class="section-head" data-anim="s4-head">
+                <span class="h">Connect your apps</span>
+                <span class="sub">So Indus Cowork can share Acme Skincare launch updates where your team works.</span>
+              </div>
+              <div class="connectors">
+                <div class="connector" data-anim="s4-card-1">
+                  <div class="top"><svg class="logo"><use href="#i-slack"/></svg><span class="toggle" data-toggle="1"><span class="on"></span><span class="knob"></span></span></div>
+                  <span class="name">Slack</span><span class="desc">Post updates to channels</span>
+                  <div class="state"><span class="muted-label" data-off="1">Not connected</span><span class="badge badge-success" data-on="1">Connected</span></div>
+                </div>
+                <div class="connector" data-anim="s4-card-2">
+                  <div class="top"><svg class="logo"><use href="#i-gmail"/></svg><span class="toggle" data-toggle="2"><span class="on"></span><span class="knob"></span></span></div>
+                  <span class="name">Gmail</span><span class="desc">Draft and send email</span>
+                  <div class="state"><span class="muted-label" data-off="2">Not connected</span><span class="badge badge-success" data-on="2">Connected</span></div>
+                </div>
+                <div class="connector" data-anim="s4-card-3">
+                  <div class="top"><svg class="logo"><use href="#i-drive"/></svg><span class="toggle" data-toggle="3"><span class="on"></span><span class="knob"></span></span></div>
+                  <span class="name">Google Drive</span><span class="desc">Read and save files</span>
+                  <div class="state"><span class="muted-label" data-off="3">Not connected</span><span class="badge badge-success" data-on="3">Connected</span></div>
+                </div>
+              </div>
+              <div class="status is-static" data-anim="s4-done"><svg><use href="#i-check"/></svg><span>Slack, Gmail and Google Drive connected</span></div>
+            </section>
+
+            <!-- Scene 5: Workflows -->
+            <section class="scene" data-scene="4">
+              <div class="user-group">
+                <div class="bubble" data-anim="s5-bubble">Share a launch update in #growth every Monday 9 am</div>
+              </div>
+              <div class="status-swap">
+                <div class="status" data-anim="s5-working"><svg data-anim="s5-spin"><use href="#i-spin"/></svg><span class="shimmer" data-anim="s5-shimmer">Creating a scheduled task</span></div>
+                <div class="status" data-anim="s5-done"><svg><use href="#i-check"/></svg><span>Scheduled task created</span></div>
+              </div>
+              <div class="card task-table" data-anim="s5-card">
+                <div class="task-grid">
+                  <div class="th">Name</div><div class="th">Schedule</div><div class="th">Status</div><div class="th">Target channel</div><div class="th">Next run</div>
+                  <div class="td task-name" data-anim="s5-c1"><span class="task-icon"><svg><use href="#i-cal"/></svg></span>Weekly launch update</div>
+                  <div class="td" data-anim="s5-c2"><span class="badge badge-success">Mon at 09:00</span></div>
+                  <div class="td" data-anim="s5-c3"><span class="badge badge-success" data-anim="s5-active">Active</span></div>
+                  <div class="td" data-anim="s5-c4"><span class="badge badge-neutral"><svg><use href="#i-slack"/></svg>#growth</span></div>
+                  <div class="td next" data-anim="s5-c5">Mon 12 Oct, 09:00</div>
+                </div>
+              </div>
+            </section>
+
           </div>
         </div>
 
         <div class="empty-state" id="empty-state" aria-hidden="true"><h1>What would you like to know?</h1></div>
 
         <div class="composer-wrap" id="composer-wrap">
-          <div class="composer">
+          <div class="composer" id="composer">
+            <div class="composer-attach" id="composer-attach">
+              <div class="file-card" id="composer-file"><span class="file-tile">CSV</span><div><div class="name">acme-sales.csv</div></div></div>
+            </div>
             <div class="composer-input" id="composer-input"><span class="placeholder">Ask anything…</span></div>
             <div class="composer-actions">
               <span class="icon-btn" aria-hidden="true">
@@ -328,7 +642,7 @@ body {
               </span>
             </div>
           </div>
-          <div class="disclaimer">AI can make mistakes. Please double-check responses.</div>
+          <div class="disclaimer" id="disclaimer">AI can make mistakes. Please double-check responses.</div>
         </div>
 
       </div>
@@ -349,7 +663,6 @@ body {
   const $ = (sel) => document.querySelector(sel);
   const anim = (name) => document.querySelector(`[data-anim="${name}"]`);
 
-  // Fade + rise in, optionally fade out at the end of the scene
   function enter(el, p, rise = 8, scaleFrom = 1) {
     if (!el) return;
     const s = scaleFrom + (1 - scaleFrom) * p;
@@ -360,37 +673,24 @@ body {
   const SCENE_LEN = 5;   // seconds per capability
   const HOLD = 1;        // hold on the last frame before looping
   const FADE = 0.3;      // scene cross-fade
+  const PACE = 1.12;     // beats run slightly fast so each end frame holds ~0.65s before the fade
 
-  const composerInput = $('#composer-input');
-  const composerWrap = $('#composer-wrap');
-  const emptyState = $('#empty-state');
-  let lift = 0; // px the composer rises to sit centred under the heading
-
-  // Measure in unscaled layout px: centre heading + composer as one group in the panel
-  function measureEmptyState() {
-    const panel = composerWrap.parentElement;
-    const composerH = composerWrap.querySelector('.composer').offsetHeight;
-    const headH = emptyState.offsetHeight;
-    const gap = 24; // --space-6, as in the Prompt frame
-    const groupTop = (panel.clientHeight - (headH + gap + composerH)) / 2;
-    lift = composerWrap.offsetTop - (groupTop + headH + gap);
-    emptyState.style.top = groupTop + 'px';
-  }
-  measureEmptyState();
-  if (document.fonts) document.fonts.ready.then(measureEmptyState);
-
-  // 1 = composer centred under the heading, 0 = docked at the bottom
-  function setEmptyState(p, headingOpacity) {
-    composerWrap.style.transform = `translateY(${-lift * p}px)`;
-    emptyState.style.opacity = headingOpacity;
-    emptyState.style.transform = `translateY(${-(1 - headingOpacity) * 8}px)`;
-    composerWrap.querySelector('.disclaimer').style.opacity = 1 - p;
-  }
-  const sendBtn = $('#send');
+  const panel = $('#panel');
+  const threadWrap = $('#thread-wrap');
   const thread = $('#thread');
-  const chapters = [...document.querySelectorAll('.chapter')];
+  const composer = $('#composer');
+  const composerWrap = $('#composer-wrap');
+  const composerInput = $('#composer-input');
+  const composerAttach = $('#composer-attach');
+  const composerFile = $('#composer-file');
+  const disclaimer = $('#disclaimer');
+  const sendBtn = $('#send');
+  const emptyState = $('#empty-state');
+  const steps = [...document.querySelectorAll('.step')];
+  const fills = [...document.querySelectorAll('.link .fill')];
   const sceneEls = [...document.querySelectorAll('.scene')];
 
+  /* ── Composer ─────────────────────────────────────────────── */
   function setComposer(text, caret) {
     if (!text) {
       composerInput.innerHTML = '<span class="placeholder">Ask anything…</span>';
@@ -400,113 +700,251 @@ body {
     }
   }
 
-  // Shared prompt beat: type into the composer, press send, bubble lands
-  function promptBeat(t, prompt, bubbleName) {
-    const typeStart = 0.3, typeDur = 1.2, sendAt = 1.6;
+  // Type into the composer, press send, the bubble lands in the thread
+  function promptBeat(t, prompt, bubbleName, { typeStart = 0.3, typeDur = 1.2, sendAt = 1.6 } = {}) {
     const typed = Math.round(prompt.length * prog(t, typeStart, typeDur));
-    const caretOn = t < sendAt && Math.floor(t * 2.5) % 2 === 0;
-    setComposer(t < sendAt ? prompt.slice(0, typed) : '', caretOn || (t >= typeStart && t < typeStart + typeDur));
+    const typing = t >= typeStart && t < typeStart + typeDur;
+    const caretOn = typing || (t < sendAt && Math.floor(t * 2.5) % 2 === 0);
+    setComposer(t < sendAt ? prompt.slice(0, typed) : '', caretOn);
 
     const hasText = t >= typeStart && t < sendAt;
-    const press = t >= sendAt - 0.08 && t < sendAt + 0.12 ? 0.9 : 1;
     sendBtn.style.opacity = hasText ? 1 : 0.5;
-    sendBtn.style.transform = `scale(${press})`;
+    sendBtn.style.transform = `scale(${t >= sendAt - 0.08 && t < sendAt + 0.12 ? 0.9 : 1})`;
 
     enter(anim(bubbleName), ease(t, sendAt + 0.15, 0.35), 10);
     return sendAt;
   }
 
+  // "Working…" shimmer line that swaps to a done line with a check
+  function statusBeat(t, prefix, inAt, doneAt) {
+    const swap = ease(t, doneAt, 0.25);
+    const working = anim(`${prefix}-working`);
+    working.style.opacity = ease(t, inAt, 0.3) * (1 - swap);
+    anim(`${prefix}-done`).style.opacity = swap;
+    anim(`${prefix}-spin`).style.transform = `rotate(${t * 240}deg)`;
+    anim(`${prefix}-shimmer`).style.backgroundPosition = `${100 - ((t * 60) % 300)}% 0`;
+  }
+
+  /* ── Empty state (scene 1 opening and loop point) ──────────── */
+  let lift = 0; // px the composer rises to sit centred under the heading
+  function measureEmptyState() {
+    const composerH = composer.offsetHeight;
+    const headH = emptyState.offsetHeight;
+    const gap = 24; // --space-6, as in the Prompt frame
+    const groupTop = (panel.clientHeight - (headH + gap + composerH)) / 2;
+    lift = composerWrap.offsetTop - (groupTop + headH + gap);
+    emptyState.style.top = groupTop + 'px';
+  }
+  // 1 = composer centred under the heading, 0 = docked at the bottom
+  function setEmptyState(p, headingOpacity) {
+    composerWrap.style.transform = `translateY(${-lift * p}px)`;
+    emptyState.style.opacity = headingOpacity;
+    emptyState.style.transform = `translateY(${-(1 - headingOpacity) * 8}px)`;
+    disclaimer.style.opacity = 1 - p;
+  }
+
   /* ── Scene 1: Research ───────────────────────────────────── */
   function research(t) {
     const sent = promptBeat(t, 'Research how Indian D2C brands launch on WhatsApp', 's1-bubble');
-
-    // Opens on the empty state; on send the heading lifts away and the composer docks
     setEmptyState(1 - ease(t, sent, 0.5), 1 - ease(t, sent, 0.25));
-
-    const searchIn = ease(t, sent + 0.3, 0.3);
-    const doneAt = 3.3;
-    const swap = ease(t, doneAt, 0.25);
-    const searching = anim('s1-searching');
-    searching.style.opacity = searchIn * (1 - swap);
-    anim('s1-searched').style.opacity = swap;
-    anim('s1-spinner').style.transform = `rotate(${t * 240}deg)`;
-    anim('s1-shimmer').style.backgroundPosition = `${100 - ((t * 60) % 300)}% 0`;
-
-    // Sources stream in one by one
-    [2.15, 2.45, 2.75, 3.05].forEach((at, i) => {
-      enter(anim(`s1-src-${i + 1}`), ease(t, at, 0.3), 6, 0.96);
-    });
-
-    // Cited summary builds line by line → end frame
+    statusBeat(t, 's1', sent + 0.3, 3.3);
+    [2.15, 2.45, 2.75, 3.05].forEach((at, i) => enter(anim(`s1-src-${i + 1}`), ease(t, at, 0.3), 6, 0.96));
     enter(anim('s1-lead'), ease(t, 3.45, 0.35), 6);
     [3.7, 3.95, 4.2].forEach((at, i) => enter(anim(`s1-pt-${i + 1}`), ease(t, at, 0.35), 6));
   }
 
-  const scenes = [research];
+  /* ── Scene 2: Data analysis ──────────────────────────────── */
+  function dataAnalysis(t) {
+    const sendAt = 1.9;
+    // The CSV drops into the composer, then rides along with the sent message
+    const drop = ease(t, 0.25, 0.5);
+    const attached = t < sendAt ? drop : 0;
+    composerAttach.style.height = `${50 * attached}px`;
+    composerFile.style.opacity = t < sendAt ? clamp(drop * 3) : 0;
+    composerFile.style.transform = `translateY(${-(1 - drop) * 56}px) rotate(${-(1 - drop) * 5}deg)`;
+    composer.style.borderColor = t > 0.1 && t < 0.75 ? 'var(--color-border-strong)' : '';
+
+    promptBeat(t, 'Where are we losing users?', 's2-bubble', { typeStart: 0.85, typeDur: 0.75, sendAt });
+    enter(anim('s2-file'), ease(t, sendAt + 0.05, 0.35), 10);
+    statusBeat(t, 's2', sendAt + 0.4, 2.9);
+
+    enter(anim('s2-card'), ease(t, 2.95, 0.35), 8);
+    [3.1, 3.22, 3.34, 3.46].forEach((at, i) => {
+      const bar = document.querySelector(`[data-bar="s2-bar-${i + 1}"]`);
+      bar.style.width = `${parseFloat(bar.dataset.w) * ease(t, at, 0.55)}%`;
+    });
+    anim('s2-band').style.opacity = ease(t, 3.95, 0.3);
+    const badge = anim('s2-badge');
+    const bp = ease(t, 4.05, 0.3);
+    badge.style.opacity = bp;
+    badge.style.transform = `translateY(-50%) scale(${0.9 + 0.1 * bp})`;
+    enter(anim('s2-note'), ease(t, 4.3, 0.35), 6);
+  }
+
+  /* ── Scene 3: Presentations ──────────────────────────────── */
+  const slides = {
+    left: document.querySelector('[data-slide="left"]'),
+    right: document.querySelector('[data-slide="right"]'),
+    center: document.querySelector('[data-slide="center"]'),
+  };
+  function presentations(t) {
+    const sent = promptBeat(t, 'Turn this into a launch deck', 's3-bubble');
+    statusBeat(t, 's3', sent + 0.3, 3.4);
+
+    // Cover appears, the other two slides sit behind it, then the deck fans out
+    const fan = anim('s3-fan');
+    fan.style.opacity = ease(t, 2.3, 0.4);
+    const rise = 1 - ease(t, 2.3, 0.5);
+    const f = ease(t, 3.4, 0.7);
+    const behind = ease(t, 2.7, 0.3);
+    const place = (el, x, y, r, s, o) => {
+      el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y + rise * 14}px)) rotate(${r}deg) scale(${s})`;
+      el.style.opacity = o;
+    };
+    place(slides.left, -238 * f, 12 * f, -6 * f, 0.96, behind);
+    place(slides.right, 238 * f, 12 * f, 6 * f, 0.96, behind);
+    place(slides.center, 0, -6 * f, 0, 1 + 0.06 * f, 1);
+  }
+
+  /* ── Scene 4: Connectors ─────────────────────────────────── */
+  function connectors(t) {
+    setComposer('', false);
+    sendBtn.style.opacity = 0.5;
+    sendBtn.style.transform = '';
+
+    enter(anim('s4-head'), ease(t, 0.3, 0.35), 6);
+    [0.55, 0.7, 0.85].forEach((at, i) => enter(anim(`s4-card-${i + 1}`), ease(t, at, 0.35), 8));
+
+    // Toggles connect in sequence: Slack → Gmail → Drive
+    [1.5, 2.3, 3.1].forEach((at, i) => {
+      const n = i + 1;
+      const p = ease(t, at, 0.3);
+      const toggle = document.querySelector(`[data-toggle="${n}"]`);
+      toggle.querySelector('.on').style.opacity = p;
+      toggle.querySelector('.knob').style.transform = `translateX(${14 * p}px)`;
+      const press = t >= at - 0.1 && t < at + 0.15 ? 0.92 : 1;
+      toggle.style.transform = `scale(${press})`;
+      const swap = ease(t, at + 0.2, 0.3);
+      document.querySelector(`[data-off="${n}"]`).style.opacity = 1 - swap;
+      const on = document.querySelector(`[data-on="${n}"]`);
+      on.style.opacity = swap;
+      on.style.transform = `scale(${0.9 + 0.1 * swap})`;
+    });
+    enter(anim('s4-done'), ease(t, 3.75, 0.35), 6);
+  }
+
+  /* ── Scene 5: Workflows ──────────────────────────────────── */
+  function workflows(t) {
+    const sent = promptBeat(t, 'Share a launch update in #growth every Monday 9 am', 's5-bubble');
+    statusBeat(t, 's5', sent + 0.3, 3.2);
+    enter(anim('s5-card'), ease(t, 3.25, 0.35), 8);
+    [3.4, 3.5, 3.6, 3.7, 3.8].forEach((at, i) => enter(anim(`s5-c${i + 1}`), ease(t, at, 0.3), 4));
+    // Active badge lands last
+    const a = anim('s5-active');
+    const ap = ease(t, 4.05, 0.3);
+    a.style.opacity = ap;
+    a.style.transform = `scale(${0.8 + 0.2 * ap})`;
+  }
+
+  /* ── Auto-scroll: keep the newest content in view, like a chat ── */
+  function offsetWithin(el, root) {
+    let y = 0;
+    for (let n = el; n && n !== root; n = n.offsetParent) y += n.offsetTop;
+    return y;
+  }
+  function autoscroll(sceneEl) {
+    let need = 0;
+    sceneEl.querySelectorAll('[data-anim]').forEach((el) => {
+      const o = parseFloat(el.style.opacity);
+      if (!(o > 0)) return;
+      need = Math.max(need, offsetWithin(el, thread) + el.offsetHeight * Math.min(1, o * 1.5));
+    });
+    const avail = threadWrap.clientHeight - 12;
+    thread.style.transform = `translateY(${-Math.max(0, need - avail)}px)`;
+  }
+
+  /* ── Frame ────────────────────────────────────────────────── */
+  const scenes = [research, dataAnalysis, presentations, connectors, workflows];
   const TOTAL = scenes.length * SCENE_LEN + HOLD;
 
   function render(time) {
     const T = ((time % TOTAL) + TOTAL) % TOTAL;
     const idx = Math.min(scenes.length - 1, Math.floor(T / SCENE_LEN));
-    const t = T - idx * SCENE_LEN;           // local scene time (runs into the hold on the last scene)
+    const t = T - idx * SCENE_LEN;   // local scene time (runs into the hold on the last scene)
+    const isLast = idx === scenes.length - 1;
 
     sceneEls.forEach((el, i) => el.classList.toggle('is-live', i === idx));
-    chapters.forEach((el, i) => el.classList.toggle('is-active', i === idx));
 
-    setEmptyState(0, 0);   // docked by default; scene 1 opens on the empty state
-    scenes[idx](t);
+    // Defaults; scenes override what they use
+    setEmptyState(0, 0);
+    composerAttach.style.height = '0px';
+    composerFile.style.opacity = 0;
+    composer.style.borderColor = '';
 
-    // Cross-fade the thread at scene boundaries (and around the loop point)
-    const isLast = idx === scenes.length - 1;
-    // Last scene: thread fades out first, then the composer returns (no overlap)
+    scenes[idx](t * PACE);
+    autoscroll(sceneEls[idx]);
+
+    // Cross-fade the thread at scene boundaries; on the last scene the thread
+    // fades out first, then the composer returns to the empty state (no overlap)
     const outStart = isLast ? SCENE_LEN + HOLD - 2 * FADE : SCENE_LEN - FADE;
     const returnStart = SCENE_LEN + HOLD - FADE;
-    const fadeIn = ease(t, 0, FADE);
-    const fadeOut = 1 - prog(t, outStart, FADE);
-    thread.style.opacity = Math.min(fadeIn, fadeOut);
+    thread.style.opacity = Math.min(ease(t, 0, FADE), 1 - prog(t, outStart, FADE));
 
-    // Loop point: return to the empty state so frame 0 follows seamlessly
+    // Capability timeline: done / active / upcoming, and the link to the next step fills
+    let reset = 1;
     if (isLast && t > outStart) {
       setComposer('', false);
       sendBtn.style.opacity = 0.5;
       const back = ease(t, returnStart, FADE);
       setEmptyState(back, ease(t, returnStart + FADE / 3, FADE * 2 / 3));
+      reset = 1 - ease(t, outStart, FADE);
     }
+    steps.forEach((el, i) => {
+      el.classList.toggle('is-done', i < idx && reset > 0.5);
+      el.classList.toggle('is-active', i === idx && reset > 0.5);
+    });
+    fills.forEach((el, i) => {
+      const p = i < idx ? 1 : i === idx ? prog(t, 0, SCENE_LEN) : 0;
+      el.style.width = `${p * 100 * reset}%`;
+    });
   }
 
   /* ── Playback ─────────────────────────────────────────────── */
   const params = new URLSearchParams(location.search);
   const frozen = params.has('t') ? parseFloat(params.get('t')) : null;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let elapsed = 0, last = null, running = true;
   function tick(now) {
     if (last !== null && running) elapsed += (now - last) / 1000;
     last = now;
-    render(elapsed);
-    requestAnimationFrame(tick);
-  }
-
-  if (frozen !== null) {
-    render(frozen);
-  } else {
-    // Pause while the tab or the hero is off-screen
-    document.addEventListener('visibilitychange', () => { running = !document.hidden; });
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver(([e]) => { running = e.isIntersecting && !document.hidden; })
-        .observe(document.getElementById('stage'));
-    }
+    // Reduced motion: no animation, step through each scene's end frame
+    render(reduceMotion ? Math.floor(elapsed / SCENE_LEN) % scenes.length * SCENE_LEN + SCENE_LEN - 0.01 : elapsed);
     requestAnimationFrame(tick);
   }
 
   /* ── Scale the fixed-size stage to fit, centred ───────────── */
-  const stage = document.getElementById('stage');
-  const viewport = document.getElementById('viewport');
+  const stage = $('#stage');
+  const viewport = $('#viewport');
   function fit() {
-    const s = Math.min(viewport.clientWidth / 1000, viewport.clientHeight / 625);
+    const s = Math.min(viewport.clientWidth / stage.offsetWidth, viewport.clientHeight / stage.offsetHeight);
     stage.style.transform = `translate(-50%, -50%) scale(${s})`;
   }
   new ResizeObserver(fit).observe(viewport);
   fit();
+
+  measureEmptyState();
+  if (document.fonts) document.fonts.ready.then(() => { measureEmptyState(); if (frozen !== null) render(frozen); });
+
+  if (frozen !== null) {
+    render(frozen);
+  } else {
+    document.addEventListener('visibilitychange', () => { running = !document.hidden; });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => { running = e.isIntersecting && !document.hidden; }).observe(stage);
+    }
+    requestAnimationFrame(tick);
+  }
 })();
 </script>
 </body>

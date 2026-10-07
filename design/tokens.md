@@ -85,13 +85,14 @@ Only values that appear in those frames are listed. The `:root` block is in [`to
 - Content max width: 720px
 - Composer shadow: `0 12px 12px #f0f0f0` (the only shadow in the design)
 
-## Not in Figma: needs your call
+## Decisions (confirmed: follow Figma)
 
-1. **Citation and accent colour.** The frames are fully monochrome; the only colours are the semantic tints above. The reference video uses blue for citations and the "Generating slides…" text.
-   - My proposal: keep it monochrome. Citations would be `#141414` numbers on `#f5f5f5` pills.
-   - Alternative: use the existing `#e8effc` tint as the only accent.
-2. **User bubble.** Figma uses a light `#f5f5f5` bubble with dark text and a 20px radius. The reference video uses a black bubble. I'm following Figma.
-3. **Acme Skincare deck palette** for scene 3. This is story content, not Sarvam UI, so it gets its own scoped tokens. Proposed values, taken from the video:
-   - Deep green `#1f5c4a`
-   - Cream `#f3efe6`
-   - Sage `#5f8f7e`
+- **Monochrome UI.** There's no blue accent. Citations use `#525252` numbers on `#f5f5f5` pills.
+- **User bubble** is `#f5f5f5`, with a 20px radius.
+- **Acme Skincare deck palette** is story content, so it's scoped to the slides only:
+
+| Token | Hex |
+|---|---|
+| `--acme-green` | `#1f5c4a` |
+| `--acme-cream` | `#f3efe6` |
+| `--acme-sage` | `#5f8f7e` |

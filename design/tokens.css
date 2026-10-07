@@ -75,4 +75,9 @@
 
   /* ── Elevation ─────────────────────────────────────────── */
   --shadow-composer: 0 12px 12px #f0f0f0;
+
+  /* ── Acme Skincare deck (story content, scoped to the slides) ── */
+  --acme-green: #1f5c4a;
+  --acme-cream: #f3efe6;
+  --acme-sage:  #5f8f7e;
 }
