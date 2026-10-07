@@ -83,13 +83,13 @@ body {
   font-size: var(--text-small-size); line-height: var(--text-small-lh);
   letter-spacing: var(--text-small-track);
   color: var(--color-ink-placeholder);
-  transition: color .3s;
+  transition: color .5s ease;
 }
 .step .dot {
   width: 8px; height: 8px; border-radius: var(--radius-pill);
   border: 1.5px solid var(--color-border-strong);
   background: var(--color-surface);
-  transition: background-color .3s, border-color .3s, box-shadow .3s;
+  transition: background-color .5s ease, border-color .5s ease, box-shadow .5s ease;
 }
 .step.is-done { color: var(--color-ink-secondary); }
 .step.is-done .dot { background: var(--color-ink); border-color: var(--color-ink); }
@@ -412,7 +412,7 @@ body {
   box-shadow: var(--shadow-composer);
   padding: var(--space-2);
   display: flex; flex-direction: column; gap: var(--space-2);
-  transition: border-color .2s;
+  transition: border-color .4s ease;
 }
 .composer-attach { height: 0; position: relative; }
 .composer-attach .file-card { position: absolute; left: 0; top: 0; padding: 6px var(--space-3) 6px 6px; border-radius: var(--radius-md); }
@@ -646,9 +646,11 @@ body {
      Every frame is a pure function of time, so the loop is seamless
      and any moment can be frozen with ?t=<seconds> for review. */
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-  const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+  const SOFT = 1.45;     // every fade/slide runs this much longer than its listed duration
+  const easeOut = (x) => 1 - Math.pow(1 - x, 4);                      // quartic: gentle settle
   const prog = (t, start, dur) => clamp((t - start) / dur);          // linear 0..1
-  const ease = (t, start, dur) => easeOut(prog(t, start, dur));      // eased 0..1
+  const ease = (t, start, dur) => easeOut(prog(t, start, dur * SOFT)); // eased 0..1
+  const bump = (t, at, dur) => Math.sin(Math.PI * prog(t, at, dur)); // 0→1→0, for soft presses
 
   const $ = (sel) => document.querySelector(sel);
   const anim = (name) => document.querySelector(`[data-anim="${name}"]`);
@@ -661,8 +663,8 @@ body {
   }
 
   const HOLD = 1;        // hold on the last frame before looping
-  const FADE = 0.3;      // loop-point fade
-  const PACE = 1.12;     // beats run slightly fast so each end frame holds before the next prompt
+  const FADE = 0.45;     // loop-point fade
+  const PACE = 0.92;     // beats play a little slower than listed, for a calmer read
 
   const panel = $('#panel');
   const threadWrap = $('#thread-wrap');
@@ -676,6 +678,7 @@ body {
   const sendBtn = $('#send');
   const emptyState = $('#empty-state');
   const steps = [...document.querySelectorAll('.step')];
+  let scrollY = 0, lastT = null;
   const fills = [...document.querySelectorAll('.link .fill')];
 
   /* ── Composer ─────────────────────────────────────────────── */
@@ -689,13 +692,13 @@ body {
   }
 
   // Type the prompt, press send. Only the scene that owns the composer calls this.
-  function typePrompt(t, { text, typeStart = 0.3, typeDur = 1.2, sendAt = 1.6 }) {
+  function typePrompt(t, { text, typeStart = 0.3, typeDur = 1.25, sendAt = 1.65 }) {
     const typed = Math.round(text.length * prog(t, typeStart, typeDur));
     const typing = t >= typeStart && t < typeStart + typeDur;
     const caretOn = typing || (t < sendAt && Math.floor(t * 2.5) % 2 === 0);
     setComposer(t < sendAt ? text.slice(0, typed) : '', caretOn);
     sendBtn.style.opacity = t >= typeStart && t < sendAt ? 1 : 0.5;
-    sendBtn.style.transform = `scale(${t >= sendAt - 0.08 && t < sendAt + 0.12 ? 0.9 : 1})`;
+    sendBtn.style.transform = `scale(${1 - 0.08 * bump(t, sendAt - 0.12, 0.36)})`;
   }
   function idleComposer() {
     setComposer('', false);
@@ -858,7 +861,7 @@ body {
       const toggle = document.querySelector(`[data-toggle="${n}"]`);
       toggle.querySelector('.on').style.opacity = p;
       toggle.querySelector('.knob').style.transform = `translateX(${14 * p}px)`;
-      toggle.style.transform = `scale(${t >= at - 0.1 && t < at + 0.15 ? 0.92 : 1})`;
+      toggle.style.transform = `scale(${1 - 0.06 * bump(t, at - 0.12, 0.4)})`;
       const swap = ease(t, at + 0.2, 0.3);
       document.querySelector(`[data-off="${n}"]`).style.opacity = 1 - swap;
       const on = document.querySelector(`[data-on="${n}"]`);
@@ -882,11 +885,11 @@ body {
 
   /* ── The story: one conversation, one prompt per capability ── */
   const SCENES = [
-    { fn: research,      len: 5,   prompt: { text: 'Research how Indian D2C brands launch on WhatsApp' }, opensEmpty: true },
-    { fn: dataAnalysis,  len: 5,   prompt: { text: 'Where are we losing users?', typeStart: 0.85, typeDur: 0.75, sendAt: 1.9 }, attachCsv: true },
-    { fn: presentations, len: 5,   prompt: { text: 'Turn this into a launch deck' } },
-    { fn: connectors,    len: 5,   prompt: { text: 'Share a launch update in #growth every Monday 9 am' } },
-    { fn: workflows,     len: 3.5 },
+    { fn: research,      len: 5.6,   prompt: { text: 'Research how Indian D2C brands launch on WhatsApp' }, opensEmpty: true },
+    { fn: dataAnalysis,  len: 5.6,   prompt: { text: 'Where are we losing users?', typeStart: 0.95, typeDur: 0.8, sendAt: 1.95 }, attachCsv: true },
+    { fn: presentations, len: 5.6,   prompt: { text: 'Turn this into a launch deck' } },
+    { fn: connectors,    len: 5.6,   prompt: { text: 'Share a launch update in #growth every Monday 9 am' } },
+    { fn: workflows,     len: 4.4 },
   ];
   let acc = 0;
   SCENES.forEach((s) => { s.start = acc; acc += s.len; });
@@ -895,8 +898,9 @@ body {
   // The CSV is dragged into the composer before the data question is sent
   function csvAttach(t, sendAt) {
     const drop = ease(t, 0.25, 0.5);
-    composerAttach.style.height = `${50 * (t < sendAt ? drop : 0)}px`;
-    composerFile.style.opacity = t < sendAt ? clamp(drop * 3) : 0;
+    const leave = ease(t, sendAt, 0.3);   // after send, the attachment slot eases shut
+    composerAttach.style.height = `${50 * drop * (1 - leave)}px`;
+    composerFile.style.opacity = clamp(drop * 3) * (1 - clamp(leave * 2));
     composerFile.style.transform = `translateY(${-(1 - drop) * 56}px) rotate(${-(1 - drop) * 5}deg)`;
     composer.style.borderColor = t > 0.1 && t < 0.75 ? 'var(--color-border-strong)' : '';
   }
@@ -916,7 +920,7 @@ body {
       need = Math.max(need, offsetWithin(el, thread) + el.offsetHeight * Math.min(1, o * 1.5));
     });
     const avail = threadWrap.clientHeight - 12;
-    thread.style.transform = `translateY(${-Math.max(0, need - avail)}px)`;
+    return Math.max(0, need - avail);
   }
 
   /* ── Frame ────────────────────────────────────────────────── */
@@ -937,13 +941,18 @@ body {
     if (cur.prompt) typePrompt(local, cur.prompt); else idleComposer();
     if (cur.attachCsv) csvAttach(local, cur.prompt.sendAt);
     if (cur.opensEmpty) {
-      const sendAt = cur.prompt.sendAt ?? 1.6;
+      const sendAt = cur.prompt.sendAt ?? 1.65;
       setEmptyState(1 - ease(local, sendAt, 0.5), 1 - ease(local, sendAt, 0.25));
     } else {
       setEmptyState(0, 0);
     }
 
-    autoscroll();
+    // Glide the chat toward the newest content (time constant ~0.28s), like a real scroll
+    const target = autoscroll();
+    const dt = lastT === null ? 1e9 : T - lastT;
+    scrollY = dt > 0 && dt < 0.5 ? scrollY + (target - scrollY) * (1 - Math.exp(-dt / 0.28)) : target;
+    lastT = T;
+    thread.style.transform = `translateY(${-scrollY}px)`;
 
     // Loop point: the conversation fades, then the composer returns to the empty state
     const outStart = TOTAL - 2 * FADE, returnStart = TOTAL - FADE;
