@@ -1,0 +1,78 @@
+/* Indus Cowork demo — design tokens
+   Source: Figma "Sarvam - Website" › Video section (node 1724:83225).
+   Only values that actually appear in those frames are listed; see tokens.md. */
+:root {
+  /* ── Fonts ─────────────────────────────────────────────── */
+  --font-display: "Season Mix", "Inter Display", "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-sans:    "Matter", "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono:    "Matter Mono", ui-monospace, "SF Mono", Menlo, "DejaVu Sans Mono", monospace;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ── Type scale (size / line-height / tracking) ────────── */
+  --text-display-size: 32px;  --text-display-lh: 38.4px;  --text-display-track: 0.4063px;   /* Season Mix Medium — "What would you like to know?" */
+  --text-title-size:   20px;  --text-title-lh:   24px;    --text-title-track:  -0.4492px;   /* Season Mix Medium — "Cowork" sidebar */
+  --text-body-size:    16px;  --text-body-lh:    24px;    --text-body-track:   -0.3125px;   /* chat body, composer input */
+  --text-heading-size: 16px;  --text-heading-lh: 19.2px;  --text-heading-track:-0.3125px;   /* panel header "Scheduled tasks" */
+  --text-ui-size:      15px;  --text-ui-lh:      21.75px; --text-ui-track:     -0.2344px;   /* nav, tool-run lines, list rows */
+  --text-small-size:   14px;  --text-small-lh:   21px;    --text-small-track:  -0.1504px;   /* buttons, table headers, descriptions */
+  --text-caption-size: 12px;  --text-caption-lh: 18px;    --text-caption-track: 0;          /* badges, file meta, disclaimer */
+
+  /* ── Colour: neutrals ──────────────────────────────────── */
+  --color-ink:            #141414; /* primary text, send button, primary button */
+  --color-ink-secondary:  #525252; /* section labels, table headers, questions */
+  --color-ink-muted:      #6b7280; /* "Ran code · Managed files" tool-run lines */
+  --color-ink-placeholder:#999999; /* "Ask anything…", file meta, connector desc */
+  --color-ink-faint:      #b3b3b3; /* "AI can make mistakes…" disclaimer */
+  --color-ink-done:       #bebebe; /* struck-through completed progress items */
+
+  --color-surface:        #ffffff; /* app panel, cards, composer */
+  --color-surface-sunken: #f5f5f5; /* user bubble, composer top tray, app chrome, table header */
+  --color-surface-hover:  #f0f0f0; /* selected nav row, secondary button, hairline divider */
+  --color-canvas:         #f7f5f3; /* warm page background behind the app */
+
+  --color-border:         #e6e6e6; /* cards, composer, table header rule */
+  --color-border-subtle:  #f0f0f0; /* table row rules, panel divider */
+  --color-border-strong:  #cccccc; /* connector card */
+
+  /* ── Colour: semantic tints ────────────────────────────── */
+  --color-success-bg:     #e3f1d8; /* "Active", "Daily at 09:00", "New" badges */
+  --color-success-fg:     #385418;
+  --color-success-icon:   #80ae4d; /* progress check-circles */
+  --color-info-bg:        #e8effc; /* scheduled-task icon tile */
+  --color-danger-bg:      #fee2e2; /* highlighted drop-off cell */
+  --color-warning-bg:     #fffbeb; /* insight row */
+  --color-slate:          #374151; /* spreadsheet header row */
+
+  /* ── Spacing (all values used in the frames) ───────────── */
+  --space-0-5: 2px;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-7:   28px;  /* panel side padding */
+  --space-12:  48px;
+
+  /* ── Radii ─────────────────────────────────────────────── */
+  --radius-xs:   4px;    /* inline code chip */
+  --radius-sm:   8px;    /* file icon, task icon tile */
+  --radius-md:   12px;   /* app panel, table, connector card */
+  --radius-lg:   16px;   /* file attachment card */
+  --radius-xl:   20px;   /* user bubble, question card */
+  --radius-2xl:  24px;   /* composer */
+  --radius-pill: 9999px; /* buttons, badges, nav rows (Figma: 3996px) */
+
+  /* ── Sizes ─────────────────────────────────────────────── */
+  --size-icon:        16px;
+  --size-icon-btn:    36px;  /* send / mic / attach */
+  --size-icon-btn-sm: 28px;
+  --size-panel-header: 64px;
+  --size-content-max: 720px;
+
+  /* ── Elevation ─────────────────────────────────────────── */
+  --shadow-composer: 0 12px 12px #f0f0f0;
+}
