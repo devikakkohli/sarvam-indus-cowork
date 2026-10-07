@@ -43,6 +43,7 @@
   --color-success-icon:   #80ae4d; /* progress check-circles */
   --color-info-bg:        #e8effc; /* scheduled-task icon tile */
   --color-danger-bg:      #fee2e2; /* highlighted drop-off cell */
+  --color-danger-fg:      #b42318; /* drop-off label (added: not in Figma, approved use of colour) */
   --color-warning-bg:     #fffbeb; /* insight row */
   --color-slate:          #374151; /* spreadsheet header row */
 

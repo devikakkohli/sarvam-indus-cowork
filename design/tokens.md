@@ -52,7 +52,8 @@ Only values that appear in those frames are listed. The `:root` block is in [`to
 | `--color-success-bg` / `-fg` | `#e3f1d8` / `#385418` | "Active", "Daily at 09:00", "New" badges |
 | `--color-success-icon` | `#80ae4d` | progress check-circles |
 | `--color-info-bg` | `#e8effc` | scheduled-task icon tile |
-| `--color-danger-bg` | `#fee2e2` | highlighted drop-off cell |
+| `--color-danger-bg` | `#fee2e2` | highlighted drop-off cell / funnel leak |
+| `--color-danger-fg` | `#b42318` | funnel leak label (**added**, not in Figma) |
 | `--color-warning-bg` | `#fffbeb` | insight row |
 | `--color-slate` | `#374151` | spreadsheet header row |
 
