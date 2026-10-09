@@ -1,0 +1,59 @@
+---
+// Reconstructed from the markup served at web.sarvam.dev/home-v3 (9 Oct 2026).
+// Component names and props come from the page's astro-island attributes.
+import BlurButton from "./BlurButton";
+import LogoCarousel from "./LogoCarousel";
+---
+
+<section class="relative flex flex-col gap-8 md:gap-0 pt-36 md:pt-40 md:h-fit min-h-screen 2xl:min-h-[75vh] lg:max-h-height-mx overflow-x-clip">
+  <div class="top-0 left-0 z-10 absolute bg-gradient-to-b from-white to-transparent w-full h-28" aria-hidden="true"></div>
+  <img
+    src="/assets/pages/home/hero-gradient.svg"
+    alt=""
+    class="top-[-150%] md:-top-[110%] left-1/2 z-0 absolute max-w-none scale-60 md:scale-x-90 md:scale-y-80 -translate-x-1/2 pointer-events-none"
+    aria-hidden="true"
+  />
+
+  <div class="z-10 relative flex flex-col md:flex-1 justify-center items-center mx-auto pb-[14vh] w-[85%] md:w-10/12 max-w-width-mx">
+    <div
+      class="top-1/2 left-1/2 -z-10 absolute opacity-30 md:opacity-40 blur-[80px] md:blur-[100px] w-72 md:w-[600px] h-72 md:h-[400px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+      style="background: radial-gradient(ellipse, #A5BBFC 0%, #D5E2FF 40%, transparent 70%);"
+      aria-hidden="true"
+    ></div>
+
+    <img src="/assets/motifs/ui/motif.svg" alt="" role="presentation" class="w-auto h-6 md:h-8 object-cover" />
+
+    <div class="flex flex-col items-center gap-1.5 md:gap-2.5 mt-5 md:mt-7 w-fit">
+      <div class="w-full h-px" style="background: radial-gradient(circle, #6a88e2 0%, transparent 100%);" aria-hidden="true"></div>
+      <p class="px-8 font-matter text-sr-indigo-900 text-sm md:text-base text-center leading-normal tracking-wide">
+        India's Sovereign AI Platform
+      </p>
+      <div class="w-full h-px" style="background: radial-gradient(circle, #6a88e2 0%, transparent 100%);" aria-hidden="true"></div>
+    </div>
+
+    <h1 class="mt-5 md:mt-8 max-w-4xl font-season-mix text-[44px] text-tx md:text-[64px] text-center leading-[1.05] tracking-tight">
+      AI for all from&nbsp;India
+    </h1>
+    <p class="mt-2.5 md:mt-3.5 w-full font-matter text-tx-secondary md:text-[20px] text-base text-center leading-[1.75]">
+      Built on sovereign compute. Powered by frontier-class&nbsp;models.
+      <br class="hidden md:block" />
+      Delivering population-scale&nbsp;impact.
+    </p>
+
+    <div class="flex flex-wrap justify-center items-center gap-4 md:gap-5 mt-5 md:mt-8">
+      <a href="https://indus.sarvam.ai/" aria-label="Sign up for Sarvam">
+        <BlurButton client:idle variant="filled" size="md" className="px-6 py-3.5">Sign up</BlurButton>
+      </a>
+      <a href="/contact-us" aria-label="Contact Sarvam">
+        <BlurButton client:idle variant="outline" size="md" className="px-6 py-3.5">Contact Us</BlurButton>
+      </a>
+    </div>
+  </div>
+
+  <div class="z-10 relative flex flex-col items-center gap-5 md:gap-8 md:pb-12 w-full shrink-0">
+    <p class="font-matter font-medium text-tx-tertiary text-xs uppercase tracking-[2px]">
+      India builds with Sarvam
+    </p>
+    <LogoCarousel client:visible speed={100} logoHeight={45} gap={60} className="mx-auto" />
+  </div>
+</section>

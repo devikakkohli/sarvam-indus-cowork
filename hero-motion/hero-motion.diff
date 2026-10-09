@@ -1,0 +1,184 @@
+diff --git a/HomeHero.astro b/HomeHero.astro
+index 206c8ae..dc6ad7d 100644
+--- a/HomeHero.astro
++++ b/HomeHero.astro
+@@ -5,14 +5,16 @@ import BlurButton from "./BlurButton";
+ import LogoCarousel from "./LogoCarousel";
+ ---
+ 
+-<section class="relative flex flex-col gap-8 md:gap-0 pt-36 md:pt-40 md:h-fit min-h-screen 2xl:min-h-[75vh] lg:max-h-height-mx overflow-x-clip">
++<section data-hero-motion class="relative flex flex-col gap-8 md:gap-0 pt-36 md:pt-40 md:h-fit min-h-screen 2xl:min-h-[75vh] lg:max-h-height-mx overflow-x-clip">
+   <div class="top-0 left-0 z-10 absolute bg-gradient-to-b from-white to-transparent w-full h-28" aria-hidden="true"></div>
+-  <img
+-    src="/assets/pages/home/hero-gradient.svg"
+-    alt=""
+-    class="top-[-150%] md:-top-[110%] left-1/2 z-0 absolute max-w-none scale-60 md:scale-x-90 md:scale-y-80 -translate-x-1/2 pointer-events-none"
+-    aria-hidden="true"
+-  />
++  <!-- Sky: sunrise (the original art), golden hour and dusk, stacked. The script fades the upper two in on scroll. -->
++  <div class="hero-sky z-0 absolute inset-0 overflow-clip pointer-events-none" aria-hidden="true">
++    <div class="hero-sky__drift absolute inset-0">
++      <img src="/assets/pages/home/hero-gradient.svg" alt="" class="top-[-150%] md:-top-[110%] left-1/2 z-0 absolute max-w-none scale-60 md:scale-x-90 md:scale-y-80 -translate-x-1/2 pointer-events-none" />
++      <img src="/assets/pages/home/hero-gradient-golden.svg" alt="" decoding="async" class="hero-sky__golden top-[-150%] md:-top-[110%] left-1/2 z-0 absolute max-w-none scale-60 md:scale-x-90 md:scale-y-80 -translate-x-1/2 pointer-events-none" />
++      <img src="/assets/pages/home/hero-gradient-dusk.svg" alt="" decoding="async" class="hero-sky__dusk top-[-150%] md:-top-[110%] left-1/2 z-0 absolute max-w-none scale-60 md:scale-x-90 md:scale-y-80 -translate-x-1/2 pointer-events-none" />
++    </div>
++  </div>
+ 
+   <div class="z-10 relative flex flex-col md:flex-1 justify-center items-center mx-auto pb-[14vh] w-[85%] md:w-10/12 max-w-width-mx">
+     <div
+@@ -20,6 +22,16 @@ import LogoCarousel from "./LogoCarousel";
+       style="background: radial-gradient(ellipse, #A5BBFC 0%, #D5E2FF 40%, transparent 70%);"
+       aria-hidden="true"
+     ></div>
++    <div
++      class="hero-glow hero-glow--golden top-1/2 left-1/2 -z-10 absolute blur-[80px] md:blur-[100px] w-72 md:w-[600px] h-72 md:h-[400px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
++      style="background: radial-gradient(ellipse, #FFC4A0 0%, #FFE6D6 40%, transparent 70%);"
++      aria-hidden="true"
++    ></div>
++    <div
++      class="hero-glow hero-glow--dusk top-1/2 left-1/2 -z-10 absolute blur-[80px] md:blur-[100px] w-72 md:w-[600px] h-72 md:h-[400px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
++      style="background: radial-gradient(ellipse, #D7A9E6 0%, #EFDDF6 40%, transparent 70%);"
++      aria-hidden="true"
++    ></div>
+ 
+     <img src="/assets/motifs/ui/motif.svg" alt="" role="presentation" class="w-auto h-6 md:h-8 object-cover" />
+ 
+@@ -57,3 +69,90 @@ import LogoCarousel from "./LogoCarousel";
+     <LogoCarousel client:visible speed={100} logoHeight={45} gap={60} className="mx-auto" />
+   </div>
+ </section>
++
++<style>
++  /* Sunrise to sunset. The script sets three numbers on the section:
++     --hero-sink    0 → 1, fast at first then settling (drives the drift)
++     --hero-golden  0 → 1 over the first half of the day (eased)
++     --hero-dusk    0 → 1 over the second half (eased)
++     Without the script all three stay 0 and the hero looks exactly as before. */
++  .hero-sky {
++    mask-image: linear-gradient(to bottom, #000 75%, transparent);
++  }
++  /* The sky holds still as the page starts to move, then eases back into the
++     scroll, so the sun lingers on screen long enough to set. */
++  .hero-sky__drift {
++    transform: translate3d(0, calc(var(--hero-sink, 0) * 25%), 0);
++    will-change: transform;
++  }
++  .hero-sky__golden {
++    opacity: var(--hero-golden, 0);
++    will-change: opacity;
++  }
++  .hero-sky__dusk {
++    opacity: var(--hero-dusk, 0);
++    will-change: opacity;
++  }
++
++  /* Same peak opacity as the original glow (opacity-30 md:opacity-40), scaled by the phase. */
++  .hero-glow {
++    --hero-glow-max: 0.3;
++    will-change: opacity;
++  }
++  @media (min-width: 48rem) {
++    .hero-glow {
++      --hero-glow-max: 0.4;
++    }
++  }
++  .hero-glow--golden {
++    opacity: calc(var(--hero-glow-max) * var(--hero-golden, 0));
++  }
++  .hero-glow--dusk {
++    opacity: calc(var(--hero-glow-max) * var(--hero-dusk, 0));
++  }
++
++  /* Keep the colour change, drop the movement. */
++  @media (prefers-reduced-motion: reduce) {
++    .hero-sky__drift {
++      transform: none;
++    }
++  }
++</style>
++
++<script>
++  // The day passes while the hero scrolls through the first RANGE of its own height.
++  // The sky drifts down by RANGE / 2 of that height (the 25% in the CSS), which
++  // starts it at a standstill and hands it back to the page at full speed.
++  const RANGE = 0.5;
++
++  const clamp01 = (x: number) => Math.min(Math.max(x, 0), 1);
++  const smoothstep = (from: number, to: number, x: number) => {
++    const t = clamp01((x - from) / (to - from));
++    return t * t * (3 - 2 * t);
++  };
++
++  document.querySelectorAll<HTMLElement>("[data-hero-motion]").forEach((hero) => {
++    let queued = false;
++    let last = -1;
++
++    const update = () => {
++      queued = false;
++      const { top, height } = hero.getBoundingClientRect();
++      const p = clamp01(-top / (height * RANGE));
++      if (p === last) return;
++      last = p;
++      hero.style.setProperty("--hero-sink", (1 - (1 - p) ** 2).toFixed(4));
++      hero.style.setProperty("--hero-golden", smoothstep(0, 0.6, p).toFixed(4));
++      hero.style.setProperty("--hero-dusk", smoothstep(0.4, 1, p).toFixed(4));
++    };
++    const queue = () => {
++      if (queued) return;
++      queued = true;
++      requestAnimationFrame(update);
++    };
++
++    addEventListener("scroll", queue, { passive: true });
++    addEventListener("resize", queue);
++    update();
++  });
++</script>
+diff --git a/public/assets/pages/home/hero-gradient-dusk.svg b/public/assets/pages/home/hero-gradient-dusk.svg
+new file mode 100644
+index 0000000..ffffa05
+--- /dev/null
++++ b/public/assets/pages/home/hero-gradient-dusk.svg
+@@ -0,0 +1,18 @@
++<svg width="3244" height="1744" viewBox="0 0 3244 1744" fill="none" xmlns="http://www.w3.org/2000/svg">
++<g filter="url(#filter0_f_10098_2069)">
++<path d="M3122 122.003C3122 519.828 2963.97 901.359 2682.66 1182.66C2401.36 1463.97 2019.83 1622 1622 1622C1224.18 1622 842.648 1463.97 561.344 1182.66C280.039 901.359 122.004 519.828 122.004 122.003L3122 122.003Z" fill="url(#paint0_radial_10098_2069)"/>
++</g>
++<defs>
++<filter id="filter0_f_10098_2069" x="0.000869751" y="-0.000106812" width="3244.01" height="1744.01" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
++<feFlood flood-opacity="0" result="BackgroundImageFix"/>
++<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
++<feGaussianBlur stdDeviation="61.0015" result="effect1_foregroundBlur_10098_2069"/>
++</filter>
++<radialGradient id="paint0_radial_10098_2069" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1622 122.003) rotate(-90) scale(1500)">
++<stop offset="0.75" stop-color="#DC3D5F"/>
++<stop offset="0.78" stop-color="#F4847F"/>
++<stop offset="0.8" stop-color="#9E8AE6"/>
++<stop offset="1" stop-color="#F3F0FF"/>
++</radialGradient>
++</defs>
++</svg>
+diff --git a/public/assets/pages/home/hero-gradient-golden.svg b/public/assets/pages/home/hero-gradient-golden.svg
+new file mode 100644
+index 0000000..5003993
+--- /dev/null
++++ b/public/assets/pages/home/hero-gradient-golden.svg
+@@ -0,0 +1,18 @@
++<svg width="3244" height="1744" viewBox="0 0 3244 1744" fill="none" xmlns="http://www.w3.org/2000/svg">
++<g filter="url(#filter0_f_10098_2069)">
++<path d="M3122 122.003C3122 519.828 2963.97 901.359 2682.66 1182.66C2401.36 1463.97 2019.83 1622 1622 1622C1224.18 1622 842.648 1463.97 561.344 1182.66C280.039 901.359 122.004 519.828 122.004 122.003L3122 122.003Z" fill="url(#paint0_radial_10098_2069)"/>
++</g>
++<defs>
++<filter id="filter0_f_10098_2069" x="0.000869751" y="-0.000106812" width="3244.01" height="1744.01" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
++<feFlood flood-opacity="0" result="BackgroundImageFix"/>
++<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
++<feGaussianBlur stdDeviation="61.0015" result="effect1_foregroundBlur_10098_2069"/>
++</filter>
++<radialGradient id="paint0_radial_10098_2069" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1622 122.003) rotate(-90) scale(1500)">
++<stop offset="0.75" stop-color="#F45A1E"/>
++<stop offset="0.78" stop-color="#FF9466"/>
++<stop offset="0.8" stop-color="#C4B5F4"/>
++<stop offset="1" stop-color="#FBF5FA"/>
++</radialGradient>
++</defs>
++</svg>
